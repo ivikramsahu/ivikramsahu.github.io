@@ -35,8 +35,8 @@ const start = (currentPage - 1) * pageSize;
 const pagePosts = posts.slice(start, start + pageSize);
 
 const prevHref =
-  currentPage <= 1 ? null : currentPage === 2 ? '/' : `/page/${currentPage - 1}`;
-const nextHref = currentPage >= totalPages ? null : `/page/${currentPage + 1}`;
+  currentPage <= 1 ? null : currentPage === 2 ? '/' : `/page/${currentPage - 1}/`;
+const nextHref = currentPage >= totalPages ? null : `/page/${currentPage + 1}/`;
 
 function estimateReadTimeMinutes(text: string) {
   const words = text.split(/\s+/).filter(Boolean).length;
@@ -104,7 +104,7 @@ function renderInlineCode(input: string) {
 
         return (
           <a
-            href={`/blog/${post.slug}`}
+            href={`/blog/${post.slug}/`}
             class="block p-[30px] no-underline hover:bg-zinc-50 dark:hover:bg-zinc-800"
           >
             <div class="space-y-4">
