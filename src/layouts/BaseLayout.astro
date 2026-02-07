@@ -1,0 +1,286 @@
+---
+import '../styles/global.css';
+
+type Props = {
+  title?: string;
+  description?: string;
+  containerClass?: string;
+};
+
+const { title, description, containerClass = 'max-w-6xl' } = Astro.props;
+const siteName = "Vikram's Focushours";
+const metaTitle = title ? `${title} | ${siteName}` : siteName;
+const metaDescription = description ?? 'Writing and notes.';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={metaDescription} />
+
+    <script is:inline>
+      (() => {
+        const storageKey = 'theme';
+        const getAutoTheme = () => {
+          const hour = new Date().getHours();
+          return hour >= 7 && hour < 19 ? 'light' : 'dark';
+        };
+
+        const readStored = () => {
+          try {
+            return localStorage.getItem(storageKey);
+          } catch {
+            return null;
+          }
+        };
+
+        const writeStored = (value) => {
+          try {
+            localStorage.setItem(storageKey, value);
+          } catch {
+            // ignore
+          }
+        };
+
+        const applyTheme = (theme) => {
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+          document.documentElement.dataset.theme = theme;
+          window.dispatchEvent(new Event('themechange'));
+        };
+
+        const applyStoredOrAuto = () => {
+          const stored = readStored();
+          if (stored === 'dark' || stored === 'light') {
+            applyTheme(stored);
+            return;
+          }
+
+          applyTheme(getAutoTheme());
+        };
+
+        const scheduleAuto = () => {
+          const stored = readStored();
+          if (stored === 'dark' || stored === 'light') return;
+
+          const now = new Date();
+          const hour = now.getHours();
+          const next = new Date(now);
+
+          if (hour < 7) {
+            next.setHours(7, 0, 0, 0);
+          } else if (hour < 19) {
+            next.setHours(19, 0, 0, 0);
+          } else {
+            next.setDate(now.getDate() + 1);
+            next.setHours(7, 0, 0, 0);
+          }
+
+          const delay = Math.max(1, next.getTime() - now.getTime());
+          setTimeout(() => {
+            applyStoredOrAuto();
+            scheduleAuto();
+          }, delay);
+        };
+
+        applyStoredOrAuto();
+        scheduleAuto();
+
+        window.__setTheme = (nextTheme) => {
+          if (nextTheme === 'auto') {
+            try {
+              localStorage.removeItem(storageKey);
+            } catch {
+              // ignore
+            }
+            applyStoredOrAuto();
+            scheduleAuto();
+            return;
+          }
+
+          writeStored(nextTheme);
+          applyTheme(nextTheme);
+        };
+
+        window.__toggleTheme = () => {
+          const current = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+          window.__setTheme(current === 'dark' ? 'light' : 'dark');
+        };
+      })();
+    </script>
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
+    <link rel="shortcut icon" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>{metaTitle}</title>
+  </head>
+  <body class="min-h-screen font-sans flex flex-col bg-zinc-50 text-zinc-900 transition-colors duration-300 dark:bg-zinc-950 dark:text-zinc-50">
+    <header class="sticky top-0 z-50 border-b border-zinc-200 bg-white/70 backdrop-blur transition-colors duration-300 dark:border-zinc-800 dark:bg-zinc-950/70">
+      <div class={`mx-auto flex ${containerClass} flex-wrap items-center justify-between gap-4 px-4 py-4`}>
+        <a href="/" class="flex min-w-0 items-center gap-3 no-underline">
+          <picture>
+            <source srcset="/mascot.png" type="image/png" />
+            <img src="/mascot.svg" alt="Vikram mascot" class="h-[75px] w-[75px]" />
+          </picture>
+          <span class="truncate text-[32px] leading-none font-semibold tracking-tight text-black dark:text-zinc-50">
+            {siteName}
+          </span>
+        </a>
+        <nav class="flex shrink-0 items-center gap-4 text-sm">
+          <a
+            href="/"
+            class="no-underline text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+          >
+            Blog
+          </a>
+          <a
+            href="/about"
+            class="no-underline text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+          >
+            About
+          </a>
+          <button
+            id="theme-toggle"
+            type="button"
+            class="relative grid h-9 w-9 place-items-center overflow-hidden rounded-lg border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:hover:text-white"
+            aria-label="Toggle theme"
+          >
+            <span class="sr-only">Toggle theme</span>
+            <svg
+              class="h-5 w-5 transition-all duration-300 ease-out opacity-100 scale-100 rotate-0 dark:opacity-0 dark:scale-50 dark:-rotate-90"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" />
+            </svg>
+            <svg
+              class="absolute h-5 w-5 transition-all duration-300 ease-out opacity-0 scale-50 rotate-90 dark:opacity-100 dark:scale-100 dark:rotate-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2" />
+              <path d="M12 20v2" />
+              <path d="m4.93 4.93 1.41 1.41" />
+              <path d="m17.66 17.66 1.41 1.41" />
+              <path d="M2 12h2" />
+              <path d="M20 12h2" />
+              <path d="m6.34 17.66-1.41 1.41" />
+              <path d="m19.07 4.93-1.41 1.41" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <script is:inline>
+      (() => {
+        const storageKey = 'theme';
+
+        const readStored = () => {
+          try {
+            return localStorage.getItem(storageKey);
+          } catch {
+            return null;
+          }
+        };
+
+        const writeStored = (value) => {
+          try {
+            localStorage.setItem(storageKey, value);
+          } catch {
+            // ignore
+          }
+        };
+
+        const applyTheme = (theme) => {
+          document.documentElement.classList.toggle('dark', theme === 'dark');
+          document.documentElement.dataset.theme = theme;
+        };
+
+        const getCurrent = () =>
+          document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+
+        const getAutoTheme = () => {
+          const hour = new Date().getHours();
+          return hour >= 7 && hour < 19 ? 'light' : 'dark';
+        };
+
+        const applyStoredOrAuto = () => {
+          const stored = readStored();
+          if (stored === 'dark' || stored === 'light') {
+            applyTheme(stored);
+            return;
+          }
+          applyTheme(getAutoTheme());
+        };
+
+        const init = () => {
+          const btn = document.getElementById('theme-toggle');
+          if (!btn) return;
+
+          const sync = () => {
+            btn.setAttribute('aria-pressed', String(getCurrent() === 'dark'));
+          };
+
+          btn.addEventListener('click', () => {
+            window.__toggleTheme();
+            sync();
+          });
+
+          window.addEventListener('themechange', sync);
+
+          const stored = readStored();
+          if (stored === 'dark' || stored === 'light') applyTheme(stored);
+          else applyStoredOrAuto();
+          sync();
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+
+    <main class={`mx-auto w-full ${containerClass} flex-1 px-4 py-10`}>
+      <slot />
+    </main>
+
+    <footer class="border-t border-zinc-200 dark:border-zinc-800">
+      <div class={`mx-auto ${containerClass} px-4 py-8 text-center text-sm text-zinc-600 dark:text-zinc-400`}>
+        <div>
+          Made with ❤ by
+          <a
+            href="https://www.linkedin.com/in/ivikramsahu/"
+            class="no-underline font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-200 dark:hover:text-white"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+          vikramsahu
+          </a>
+        </div>
+        <div class="mt-2">© 2026</div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,96 @@
+---
+const quotes = [
+  {
+    text: 'Simplicity is prerequisite for reliability.',
+    author: 'Edsger W. Dijkstra',
+  },
+  {
+    text: 'First, solve the problem. Then, write the code.',
+    author: 'John Johnson',
+  },
+  {
+    text: 'Make it work, make it right, make it fast.',
+    author: 'Kent Beck',
+  },
+  {
+    text: 'Programs must be written for people to read, and only incidentally for machines to execute.',
+    author: 'Harold Abelson',
+  },
+  {
+    text: 'The most disastrous thing that you can ever learn is your first programming language.',
+    author: 'Alan Kay',
+  },
+  {
+    text: 'Good judgment comes from experience, and experience comes from bad judgment.',
+    author: 'Fred Brooks',
+  },
+  {
+    text: 'If you can’t explain it simply, you don’t understand it well enough.',
+    author: 'Albert Einstein',
+  },
+];
+---
+
+<aside class="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+  <h2 class="text-[15px] font-semibold text-zinc-700 dark:text-zinc-50">Quote</h2>
+  <figure class="mt-3">
+    <blockquote class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300" data-quote-text>
+      {quotes[0].text}
+    </blockquote>
+    <figcaption class="mt-2 text-xs text-zinc-500 dark:text-zinc-400" data-quote-author>
+      — {quotes[0].author}
+    </figcaption>
+  </figure>
+</aside>
+
+<script is:inline>
+  (() => {
+    const quotes = [
+      {
+        text: 'Simplicity is prerequisite for reliability.',
+        author: 'Edsger W. Dijkstra',
+      },
+      {
+        text: 'First, solve the problem. Then, write the code.',
+        author: 'John Johnson',
+      },
+      {
+        text: 'Make it work, make it right, make it fast.',
+        author: 'Kent Beck',
+      },
+      {
+        text: 'Programs must be written for people to read, and only incidentally for machines to execute.',
+        author: 'Harold Abelson',
+      },
+      {
+        text: 'The most disastrous thing that you can ever learn is your first programming language.',
+        author: 'Alan Kay',
+      },
+      {
+        text: 'Good judgment comes from experience, and experience comes from bad judgment.',
+        author: 'Fred Brooks',
+      },
+      {
+        text: 'If you can\u2019t explain it simply, you don\u2019t understand it well enough.',
+        author: 'Albert Einstein',
+      },
+    ];
+
+    const root = document.currentScript && document.currentScript.parentElement;
+    if (!root) return;
+
+    const textEl = root.querySelector('[data-quote-text]');
+    const authorEl = root.querySelector('[data-quote-author]');
+    if (!textEl || !authorEl) return;
+
+    const pick = () => {
+      const idx = Math.floor(Math.random() * quotes.length);
+      const q = quotes[idx];
+      textEl.textContent = q.text;
+      authorEl.textContent = `\u2014 ${q.author}`;
+    };
+
+    pick();
+    setInterval(pick, 10 * 60 * 1000);
+  })();
+</script>
