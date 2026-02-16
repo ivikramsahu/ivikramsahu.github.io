@@ -76,7 +76,7 @@ function renderInlineCode(input: string) {
 
 <BaseLayout title={post.data.title} description={post.data.description} containerClass="max-w-6xl">
   <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
-    <article class="prose prose-zinc prose-lg dark:prose-invert max-w-none">
+    <article class="openai-prose mx-auto w-full max-w-[46rem] min-w-0">
       <div class="not-prose mb-8 space-y-3">
         <a
           href="/"
@@ -84,7 +84,7 @@ function renderInlineCode(input: string) {
         >
           ← Back
         </a>
-        <h1 class="mb-0 text-[32px] font-semibold tracking-tight">
+        <h1 class="mb-0 text-[40px] leading-[1.1] font-semibold tracking-tight">
           <span set:html={renderInlineCode(post.data.title)} />
         </h1>
         <div class="text-base text-zinc-600 dark:text-zinc-400">{formattedDate}</div>
@@ -203,7 +203,7 @@ function renderInlineCode(input: string) {
     </script>
 
     <aside class="hidden lg:block">
-      <div class="sticky top-24 max-h-[calc(100vh-8rem)] overflow-auto">
+      <div class="sticky top-24 max-h-[calc(100vh-8rem)] overflow-auto border-l border-zinc-200 pl-6 dark:border-zinc-800">
         <div class="text-sm font-semibold text-zinc-700 dark:text-zinc-50">Table of content</div>
         {toc.length > 0 ? (
           <nav class="mt-3">
