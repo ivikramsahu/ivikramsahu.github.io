@@ -100,7 +100,6 @@ function renderInlineCode(input: string) {
           {pagePosts.map((post) => {
         const readTime = post.data.readTime ?? estimateReadTimeMinutes(post.body);
         const hasReadTime = Number.isFinite(readTime) && readTime > 0;
-        const hasViews = typeof post.data.views === 'number';
 
         return (
           <a
@@ -142,24 +141,6 @@ function renderInlineCode(input: string) {
                       <path d="M12 6v6l4 2" />
                     </svg>
                     <span>{readTime} min read</span>
-                  </div>
-                )}
-                {hasViews && (
-                  <div class="inline-flex items-center gap-1">
-                    <svg
-                      class="h-3.5 w-3.5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                    <span>{post.data.views.toLocaleString()} views</span>
                   </div>
                 )}
               </div>

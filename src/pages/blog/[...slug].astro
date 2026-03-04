@@ -20,7 +20,6 @@ function estimateReadTimeMinutes(text: string) {
 
 const readTime = post.data.readTime ?? estimateReadTimeMinutes(post.body);
 const hasReadTime = Number.isFinite(readTime) && readTime > 0;
-const hasViews = typeof post.data.views === 'number';
 
 const formattedDate = post.data.date.toLocaleDateString('en-US', {
   year: 'numeric',
@@ -29,6 +28,37 @@ const formattedDate = post.data.date.toLocaleDateString('en-US', {
 });
 
 const toc = (headings ?? []).filter((h) => h.depth >= 2 && h.depth <= 3);
+
+const rawDescription = typeof post.data.description === 'string' ? post.data.description : '';
+const descriptionLead = (rawDescription.split(/\r?\n/).find((l) => l.trim().length > 0) ?? '').trim();
+const firstParagraph =
+  (post.body
+    .split(/\r?\n\s*\r?\n/)
+    .map((b) => b.trim())
+    .find((b) => b.length > 0 && !b.startsWith('#')) ??
+    '').trim();
+
+const normalizeText = (s: string) =>
+  s
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+const stripTrailingEllipsis = (s: string) => s.replace(/[\.\u2026]+\s*$/, '').trim();
+
+const leadNorm = normalizeText(stripTrailingEllipsis(descriptionLead));
+const paraNorm = normalizeText(firstParagraph);
+
+const leadLooksDuplicated =
+  leadNorm.length > 0 &&
+  paraNorm.length > 0 &&
+  (leadNorm === paraNorm || paraNorm.startsWith(leadNorm) || leadNorm.startsWith(paraNorm));
+
+const shouldRenderLead = descriptionLead.length > 0 && !leadLooksDuplicated;
+
+const pageDescription = (descriptionLead || firstParagraph).replace(/\s+/g, ' ').trim().slice(0, 180);
 
 function escapeHtml(input: string) {
   return input
@@ -74,7 +104,7 @@ function renderInlineCode(input: string) {
 }
 ---
 
-<BaseLayout title={post.data.title} description={post.data.description} containerClass="max-w-6xl">
+<BaseLayout title={post.data.title} description={pageDescription} containerClass="max-w-6xl">
   <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
     <article class="openai-prose mx-auto w-full max-w-[46rem] min-w-0">
       <div class="not-prose mb-8 space-y-3">
@@ -88,7 +118,7 @@ function renderInlineCode(input: string) {
           <span set:html={renderInlineCode(post.data.title)} />
         </h1>
         <div class="text-base text-zinc-600 dark:text-zinc-400">{formattedDate}</div>
-        {(hasReadTime || hasViews) && (
+        {hasReadTime && (
           <div class="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
             {hasReadTime && (
               <span class="inline-flex items-center gap-1">
@@ -108,34 +138,16 @@ function renderInlineCode(input: string) {
                 <span>{readTime} min</span>
               </span>
             )}
-            {hasViews && (
-              <span class="inline-flex items-center gap-1">
-                <svg
-                  class="h-3.5 w-3.5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                <span>{post.data.views.toLocaleString()}</span>
-              </span>
-            )}
           </div>
         )}
-        {(hasReadTime || hasViews) && (
+        {hasReadTime && (
           <div class="pt-3">
             <div class="h-px w-full bg-zinc-200 dark:bg-zinc-800"></div>
           </div>
         )}
-        {post.data.description && (
+        {shouldRenderLead && (
           <p class="text-zinc-600 dark:text-zinc-300">
-            <span set:html={renderInlineCode(post.data.description)} />
+            <span set:html={renderInlineCode(descriptionLead)} />
           </p>
         )}
       </div>

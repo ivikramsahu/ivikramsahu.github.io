@@ -116,7 +116,7 @@ const metaDescription = description ?? 'Writing and notes.';
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=TASA+Explorer&display=swap"
       rel="stylesheet"
     />
 
@@ -252,6 +252,76 @@ const metaDescription = description ?? 'Writing and notes.';
           if (stored === 'dark' || stored === 'light') applyTheme(stored);
           else applyStoredOrAuto();
           sync();
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+
+    <script is:inline>
+      (() => {
+        const copyText = async (text) => {
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(text);
+              return true;
+            }
+          } catch {
+            // ignore
+          }
+
+          try {
+            const el = document.createElement('textarea');
+            el.value = text;
+            el.setAttribute('readonly', '');
+            el.style.position = 'fixed';
+            el.style.left = '-9999px';
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            return true;
+          } catch {
+            return false;
+          }
+        };
+
+        const init = () => {
+          const pres = Array.from(document.querySelectorAll('pre'));
+          for (const pre of pres) {
+            if (!(pre instanceof HTMLElement)) continue;
+            if (pre.querySelector('.code-copy-btn')) continue;
+
+            const code = pre.querySelector('code');
+            if (!code) continue;
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'code-copy-btn';
+            btn.textContent = 'Copy';
+            btn.setAttribute('aria-label', 'Copy code');
+
+            btn.addEventListener('click', async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              const text = code.textContent ?? '';
+              const ok = await copyText(text);
+              const prev = btn.textContent;
+              btn.textContent = ok ? 'Copied' : 'Failed';
+              btn.disabled = true;
+              setTimeout(() => {
+                btn.textContent = prev;
+                btn.disabled = false;
+              }, 1200);
+            });
+
+            pre.appendChild(btn);
+          }
         };
 
         if (document.readyState === 'loading') {
