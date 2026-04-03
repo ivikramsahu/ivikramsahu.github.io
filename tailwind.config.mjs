@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"TASA Explorer"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['"Mona Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['Agave', 'Consolas', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
     },

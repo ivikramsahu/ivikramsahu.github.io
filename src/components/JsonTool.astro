@@ -1,0 +1,275 @@
+---
+---
+
+<div class="space-y-6">
+  <div class="space-y-2">
+    <label for="json-input" class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">Input</label>
+    <textarea
+      id="json-input"
+      name="json-input"
+      rows={12}
+      placeholder='Paste JSON here (or a base64 string if you want to decode)'
+      class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+    ></textarea>
+  </div>
+
+  <div class="flex flex-wrap gap-3">
+    <button
+      id="json-pretty"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Pretty
+    </button>
+    <button
+      id="json-minify"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Minify
+    </button>
+    <button
+      id="json-validate"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Validate
+    </button>
+    <button
+      id="json-to-base64"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      To base64
+    </button>
+    <button
+      id="json-from-base64"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      From base64
+    </button>
+    <button
+      id="json-copy"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Copy output
+    </button>
+    <button
+      id="json-swap"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Replace input with output
+    </button>
+    <button
+      id="json-clear"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Clear
+    </button>
+    <div id="json-status" class="ml-auto text-sm text-zinc-500 dark:text-zinc-400"></div>
+  </div>
+
+  <div class="space-y-3">
+    <div class="text-sm font-medium text-zinc-700 dark:text-zinc-200">Output</div>
+    <pre class="relative overflow-auto rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-900 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"><code id="json-output"></code></pre>
+  </div>
+
+  <div id="json-error-panel" class="hidden space-y-2">
+    <div class="text-sm font-medium text-zinc-700 dark:text-zinc-200">Error</div>
+    <div id="json-error" class="text-sm text-zinc-600 dark:text-zinc-300"></div>
+  </div>
+</div>
+
+<script is:inline>
+  (() => {
+    const inputEl = document.getElementById('json-input');
+    const outputEl = document.getElementById('json-output');
+    const errorEl = document.getElementById('json-error');
+    const prettyBtn = document.getElementById('json-pretty');
+    const minifyBtn = document.getElementById('json-minify');
+    const validateBtn = document.getElementById('json-validate');
+    const toB64Btn = document.getElementById('json-to-base64');
+    const fromB64Btn = document.getElementById('json-from-base64');
+    const copyBtn = document.getElementById('json-copy');
+    const swapBtn = document.getElementById('json-swap');
+    const clearBtn = document.getElementById('json-clear');
+    const statusEl = document.getElementById('json-status');
+    const errorPanelEl = document.getElementById('json-error-panel');
+
+    if (!inputEl || !outputEl || !errorEl || !prettyBtn || !minifyBtn || !validateBtn || !toB64Btn || !fromB64Btn || !copyBtn || !swapBtn || !clearBtn || !statusEl || !errorPanelEl) return;
+
+    let currentOutput = '';
+
+    const setStatus = (text) => {
+      statusEl.textContent = text;
+      if (text) {
+        setTimeout(() => {
+          if (statusEl.textContent === text) statusEl.textContent = '';
+        }, 1200);
+      }
+    };
+
+    const setError = (text) => {
+      errorEl.textContent = text || '';
+      if (text) {
+        errorPanelEl.classList.remove('hidden');
+      } else {
+        errorPanelEl.classList.add('hidden');
+      }
+    };
+
+    const setOutput = (text) => {
+      currentOutput = String(text || '');
+      outputEl.textContent = currentOutput;
+    };
+
+    const copyToClipboard = async (text) => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch {
+        return false;
+      }
+
+      try {
+        const el = document.createElement('textarea');
+        el.value = text;
+        el.setAttribute('readonly', '');
+        el.style.position = 'fixed';
+        el.style.left = '-9999px';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const parseJson = (text) => {
+      const raw = String(text || '').trim();
+      if (!raw) throw new Error('Input is empty');
+      return JSON.parse(raw);
+    };
+
+    const pretty = () => {
+      try {
+        setError('');
+        const obj = parseJson(inputEl.value);
+        setOutput(JSON.stringify(obj, null, 2) + '\n');
+        setStatus('Pretty');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+        setStatus('Failed');
+      }
+    };
+
+    const minify = () => {
+      try {
+        setError('');
+        const obj = parseJson(inputEl.value);
+        setOutput(JSON.stringify(obj));
+        setStatus('Minified');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+        setStatus('Failed');
+      }
+    };
+
+    const validate = () => {
+      try {
+        setError('');
+        parseJson(inputEl.value);
+        setStatus('Valid');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+        setStatus('Invalid');
+      }
+    };
+
+    const toBase64 = () => {
+      try {
+        setError('');
+        const raw = String(inputEl.value || '');
+        const bytes = new TextEncoder().encode(raw);
+        let bin = '';
+        for (const b of bytes) bin += String.fromCharCode(b);
+        setOutput(btoa(bin));
+        setStatus('Encoded');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+        setStatus('Failed');
+      }
+    };
+
+    const fromBase64 = () => {
+      try {
+        setError('');
+        const raw = String(inputEl.value || '').trim();
+        if (!raw) throw new Error('Input is empty');
+
+        const bin = atob(raw);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const decoded = new TextDecoder().decode(bytes);
+
+        try {
+          const obj = JSON.parse(decoded);
+          setOutput(JSON.stringify(obj, null, 2) + '\n');
+        } catch {
+          setOutput(decoded);
+        }
+
+        setStatus('Decoded');
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+        setStatus('Failed');
+      }
+    };
+
+    const init = () => {
+      setOutput('');
+      setError('');
+
+      prettyBtn.addEventListener('click', pretty);
+      minifyBtn.addEventListener('click', minify);
+      validateBtn.addEventListener('click', validate);
+      toB64Btn.addEventListener('click', toBase64);
+      fromB64Btn.addEventListener('click', fromBase64);
+
+      copyBtn.addEventListener('click', async () => {
+        const text = currentOutput || '';
+        const ok = await copyToClipboard(text);
+        setStatus(ok ? 'Copied' : 'Copy failed');
+      });
+
+      swapBtn.addEventListener('click', () => {
+        const text = currentOutput || '';
+        if (!text) return;
+        inputEl.value = text;
+        setStatus('Replaced');
+      });
+
+      clearBtn.addEventListener('click', () => {
+        inputEl.value = '';
+        setOutput('');
+        setError('');
+        setStatus('Cleared');
+        inputEl.focus();
+      });
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>

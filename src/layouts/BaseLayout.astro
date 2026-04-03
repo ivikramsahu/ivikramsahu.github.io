@@ -116,7 +116,7 @@ const metaDescription = description ?? 'Writing and notes.';
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=TASA+Explorer&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Mona+Sans:ital,wght@0,200..900;1,200..900&display=swap"
       rel="stylesheet"
     />
 
@@ -130,11 +130,17 @@ const metaDescription = description ?? 'Writing and notes.';
             <source srcset="/mascot.png" type="image/png" />
             <img src="/mascot.svg" alt="Vikram mascot" class="h-[75px] w-[75px]" />
           </picture>
-          <span class="truncate text-[32px] leading-none font-semibold tracking-tight text-black dark:text-zinc-50">
+          <span class="font-hal truncate text-[30px] leading-none font-semibold tracking-tight text-black dark:text-zinc-50">
             {siteName}
           </span>
         </a>
-        <nav class="flex shrink-0 items-center gap-4 text-sm">
+        <nav class="flex shrink-0 items-center gap-4 text-[16px]">
+          <a
+            href="/tools/"
+            class="no-underline text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+          >
+            Tools
+          </a>
           <a
             href="/"
             class="no-underline text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"

@@ -1,0 +1,462 @@
+---
+---
+
+<div class="space-y-6">
+  <div class="space-y-2">
+    <label for="md-input" class="block text-sm font-medium text-zinc-700 dark:text-zinc-200">Markdown input</label>
+    <textarea
+      id="md-input"
+      name="md-input"
+      rows={12}
+      placeholder="Paste markdown here..."
+      class="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-50"
+    ></textarea>
+  </div>
+
+  <div class="flex flex-wrap gap-3">
+    <button
+      id="md-format"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Format
+    </button>
+    <button
+      id="md-format-tables"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Format tables
+    </button>
+    <button
+      id="md-check"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Check issues
+    </button>
+    <button
+      id="md-copy"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Copy output
+    </button>
+    <button
+      id="md-swap"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Replace input with output
+    </button>
+    <button
+      id="md-clear"
+      type="button"
+      class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+    >
+      Clear
+    </button>
+    <div id="md-status" class="ml-auto text-sm text-zinc-500 dark:text-zinc-400"></div>
+  </div>
+
+  <div class="space-y-3">
+    <div class="text-sm font-medium text-zinc-700 dark:text-zinc-200">Output</div>
+    <pre class="relative overflow-auto rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-900 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"><code id="md-output"></code></pre>
+  </div>
+
+  <div id="md-issues-panel" class="hidden space-y-2">
+    <div class="text-sm font-medium text-zinc-700 dark:text-zinc-200">Possible issues</div>
+    <ul id="md-issues" class="space-y-2 text-sm text-zinc-600 dark:text-zinc-300"></ul>
+  </div>
+</div>
+
+<script is:inline>
+  (() => {
+    const inputEl = document.getElementById('md-input');
+    const outputEl = document.getElementById('md-output');
+    const issuesEl = document.getElementById('md-issues');
+    const formatBtn = document.getElementById('md-format');
+    const formatTablesBtn = document.getElementById('md-format-tables');
+    const checkBtn = document.getElementById('md-check');
+    const copyBtn = document.getElementById('md-copy');
+    const swapBtn = document.getElementById('md-swap');
+    const clearBtn = document.getElementById('md-clear');
+    const statusEl = document.getElementById('md-status');
+    const issuesPanelEl = document.getElementById('md-issues-panel');
+
+    if (!inputEl || !outputEl || !issuesEl || !formatBtn || !formatTablesBtn || !checkBtn || !copyBtn || !swapBtn || !clearBtn || !statusEl || !issuesPanelEl) return;
+
+    let currentOutput = '';
+
+    const setStatus = (text) => {
+      statusEl.textContent = text;
+      if (text) {
+        setTimeout(() => {
+          if (statusEl.textContent === text) statusEl.textContent = '';
+        }, 1200);
+      }
+    };
+
+    const copyToClipboard = async (text) => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch {
+        return false;
+      }
+
+      try {
+        const el = document.createElement('textarea');
+        el.value = text;
+        el.setAttribute('readonly', '');
+        el.style.position = 'fixed';
+        el.style.left = '-9999px';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const normalize = (text) => {
+      const lines = String(text).replace(/\r\n?/g, '\n').split('\n');
+      const cleaned = lines.map((l) => l.replace(/[ \t]+$/g, ''))
+      return cleaned.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';
+    };
+
+    const escapeHtml = (s) =>
+      String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const severityRank = { info: 1, warning: 2, error: 3 };
+
+    const highlightClass = (severity) => {
+      if (severity === 'error') return 'bg-red-100/70 dark:bg-red-900/35';
+      if (severity === 'warning') return 'bg-amber-100/70 dark:bg-amber-900/35';
+      return 'bg-sky-100/70 dark:bg-sky-900/25';
+    };
+
+    const renderOutput = (text, highlights) => {
+      currentOutput = String(text || '');
+      const lines = currentOutput.replace(/\r\n?/g, '\n').split('\n');
+      const html = lines
+        .map((line, idx) => {
+          const h = highlights && highlights.get(idx);
+          const cls = h ? highlightClass(h) : '';
+          return `<span class="block whitespace-pre ${cls}">${escapeHtml(line)}</span>`;
+        })
+        .join('');
+      outputEl.innerHTML = html;
+    };
+
+    const formatMarkdown = (text) => {
+      const normalized = normalize(text);
+      const lines = normalized.split('\n');
+      const out = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const prev = out.length > 0 ? out[out.length - 1] : '';
+
+        const isHeading = /^#{1,6}\s+/.test(line);
+        if (isHeading && prev && prev.trim() !== '') {
+          out.push('');
+        }
+
+        out.push(line);
+      }
+
+      return out.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';
+    };
+
+    const isTableLine = (line) => {
+      if (!line) return false;
+      const t = line.trim();
+      if (!t.includes('|')) return false;
+      if (/^\|?\s*-{3,}/.test(t) && t.replace(/-/g, '').replace(/\|/g, '').trim() === '') return true;
+      const cellCount = t.split('|').length;
+      return cellCount >= 3;
+    };
+
+    const parseRow = (line) => {
+      const t = line.trim();
+      const trimmed = t.startsWith('|') ? t.slice(1) : t;
+      const trimmed2 = trimmed.endsWith('|') ? trimmed.slice(0, -1) : trimmed;
+      return trimmed2.split('|').map((c) => c.trim());
+    };
+
+    const isSeparatorRow = (cells) => {
+      if (cells.length === 0) return false;
+      return cells.every((c) => /^:?-{3,}:?$/.test(c.trim()));
+    };
+
+    const formatTableBlock = (blockLines) => {
+      const rows = blockLines.map(parseRow);
+      const colCount = Math.max(...rows.map((r) => r.length));
+      const paddedRows = rows.map((r) => {
+        const rr = r.slice();
+        while (rr.length < colCount) rr.push('');
+        return rr;
+      });
+
+      const widths = new Array(colCount).fill(0);
+      for (const r of paddedRows) {
+        for (let i = 0; i < colCount; i++) {
+          widths[i] = Math.max(widths[i], (r[i] || '').length);
+        }
+      }
+
+      const formatted = paddedRows.map((r, idx) => {
+        if (idx === 1 && isSeparatorRow(r)) {
+          const sep = r.map((c, i) => {
+            const raw = c.trim();
+            const left = raw.startsWith(':');
+            const right = raw.endsWith(':');
+            const dashes = '-'.repeat(Math.max(3, widths[i]));
+            return `${left ? ':' : ''}${dashes}${right ? ':' : ''}`;
+          });
+          return `| ${sep.join(' | ')} |`;
+        }
+
+        const cells = r.map((c, i) => String(c || '').padEnd(Math.max(3, widths[i]), ' '));
+        return `| ${cells.join(' | ')} |`;
+      });
+
+      return formatted;
+    };
+
+    const formatTables = (text) => {
+      const src = String(text).replace(/\r\n?/g, '\n');
+      const lines = src.split('\n');
+      const out = [];
+
+      let inFence = false;
+      let block = [];
+
+      const flush = () => {
+        if (block.length > 0) {
+          out.push(...formatTableBlock(block));
+          block = [];
+        }
+      };
+
+      for (const line of lines) {
+        const fence = line.trim().startsWith('```');
+        if (fence) {
+          flush();
+          inFence = !inFence;
+          out.push(line);
+          continue;
+        }
+
+        if (!inFence && isTableLine(line)) {
+          block.push(line);
+          continue;
+        }
+
+        if (block.length > 0) {
+          flush();
+        }
+
+        out.push(line);
+      }
+
+      flush();
+      return normalize(out.join('\n'));
+    };
+
+    const checkIssues = (text) => {
+      const src = String(text).replace(/\r\n?/g, '\n');
+      const lines = src.split('\n');
+      const issues = [];
+
+      let fenceCount = 0;
+      let lastFenceLine = -1;
+      let prevHeading = 0;
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (line.trim().startsWith('```')) {
+          fenceCount++;
+          lastFenceLine = i;
+        }
+        if (/[ \t]+$/.test(line)) {
+          issues.push({
+            severity: 'warning',
+            type: 'trailing_whitespace',
+            line: i,
+            title: `Line ${i + 1}: trailing whitespace`,
+            suggestion: 'Remove spaces/tabs at the end of the line.',
+          });
+        }
+        if (line.length > 120) {
+          issues.push({
+            severity: 'info',
+            type: 'long_line',
+            line: i,
+            title: `Line ${i + 1}: long line (${line.length} chars)`,
+            suggestion: 'Wrap the line (or break long URLs into reference links).',
+          });
+        }
+
+        const m = line.match(/^(#{1,6})\s+/);
+        if (m) {
+          const level = m[1].length;
+          const prevLine = i > 0 ? lines[i - 1] : '';
+          if (prevLine.trim() !== '' && i !== 0) {
+            issues.push({
+              severity: 'warning',
+              type: 'missing_blank_before_heading',
+              line: i,
+              title: `Line ${i + 1}: missing blank line before heading`,
+              suggestion: 'Insert an empty line before the heading.',
+            });
+          }
+          if (prevHeading && level > prevHeading + 1) {
+            issues.push({
+              severity: 'warning',
+              type: 'heading_jump',
+              line: i,
+              title: `Line ${i + 1}: heading level jumps from H${prevHeading} to H${level}`,
+              suggestion: `Use H${prevHeading + 1} before H${level} (or reduce this heading to H${prevHeading + 1}).`,
+            });
+          }
+          prevHeading = level;
+        }
+      }
+
+      if (fenceCount % 2 === 1) {
+        issues.push({
+          severity: 'error',
+          type: 'unclosed_code_fence',
+          line: lastFenceLine >= 0 ? lastFenceLine : 0,
+          title: 'Unclosed code fence (```): odd number of fences detected',
+          suggestion: 'Add a closing ``` after the code block.',
+        });
+      }
+
+      return issues;
+    };
+
+    const renderIssues = (items) => {
+      issuesEl.innerHTML = '';
+      if (!items || items.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'rounded-xl border border-zinc-200 bg-white px-3 py-2 text-zinc-700 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200';
+        li.textContent = 'No obvious issues detected.';
+        issuesEl.appendChild(li);
+        return;
+      }
+
+      for (const it of items) {
+        const li = document.createElement('li');
+        const sev = it.severity || 'info';
+        const border = sev === 'error' ? 'border-red-200 dark:border-red-900/60' : sev === 'warning' ? 'border-amber-200 dark:border-amber-900/60' : 'border-sky-200 dark:border-sky-900/60';
+        const bg = sev === 'error' ? 'bg-red-50/60 dark:bg-red-900/20' : sev === 'warning' ? 'bg-amber-50/60 dark:bg-amber-900/20' : 'bg-sky-50/60 dark:bg-sky-900/15';
+        li.className = `rounded-xl border ${border} ${bg} px-3 py-2`;
+
+        const title = document.createElement('div');
+        title.className = 'font-medium text-zinc-800 dark:text-zinc-100';
+        title.textContent = it.title;
+        li.appendChild(title);
+
+        const suggestion = document.createElement('div');
+        suggestion.className = 'mt-1 text-zinc-600 dark:text-zinc-300';
+        suggestion.textContent = `Fix: ${it.suggestion}`;
+        li.appendChild(suggestion);
+
+        issuesEl.appendChild(li);
+      }
+    };
+
+    const hideIssues = () => {
+      issuesPanelEl.classList.add('hidden');
+    };
+
+    const showIssues = () => {
+      issuesPanelEl.classList.remove('hidden');
+    };
+
+    const setOutput = (text) => {
+      renderOutput(text, null);
+    };
+
+    const init = () => {
+      setOutput('');
+      renderIssues([]);
+      hideIssues();
+
+      formatBtn.addEventListener('click', () => {
+        const formatted = formatMarkdown(inputEl.value || '');
+        setOutput(formatted);
+        hideIssues();
+        setStatus('Formatted');
+      });
+
+      formatTablesBtn.addEventListener('click', () => {
+        const formatted = formatTables(inputEl.value || '');
+        setOutput(formatted);
+        hideIssues();
+        setStatus('Tables formatted');
+      });
+
+      checkBtn.addEventListener('click', () => {
+        const base = currentOutput ? currentOutput : normalize(inputEl.value || '');
+        const issues = checkIssues(base);
+
+        const highlights = new Map();
+        for (const it of issues) {
+          const line = typeof it.line === 'number' ? it.line : -1;
+          if (line < 0) continue;
+          const current = highlights.get(line);
+          if (!current || severityRank[it.severity] > severityRank[current]) {
+            highlights.set(line, it.severity);
+          }
+        }
+
+        renderOutput(base, highlights);
+        renderIssues(issues);
+        showIssues();
+        setStatus('Checked');
+      });
+
+      copyBtn.addEventListener('click', async () => {
+        const text = outputEl.textContent || '';
+        const ok = await copyToClipboard(text);
+        setStatus(ok ? 'Copied' : 'Copy failed');
+      });
+
+      swapBtn.addEventListener('click', () => {
+        const text = currentOutput || '';
+        if (!text) return;
+        inputEl.value = text;
+        setStatus('Replaced');
+      });
+
+      clearBtn.addEventListener('click', () => {
+        inputEl.value = '';
+        setOutput('');
+        renderIssues([]);
+        hideIssues();
+        setStatus('Cleared');
+        inputEl.focus();
+      });
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>
