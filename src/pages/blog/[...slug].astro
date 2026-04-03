@@ -145,11 +145,6 @@ function renderInlineCode(input: string) {
             <div class="h-px w-full bg-zinc-200 dark:bg-zinc-800"></div>
           </div>
         )}
-        {shouldRenderLead && (
-          <p class="text-zinc-600 dark:text-zinc-300">
-            <span set:html={renderInlineCode(descriptionLead)} />
-          </p>
-        )}
       </div>
       <Content />
     </article>

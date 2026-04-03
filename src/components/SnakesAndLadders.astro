@@ -1,4 +1,6 @@
 ---
+const { compact = false } = Astro.props;
+
 const snakes: Record<number, number> = {
   16: 6,
   48: 30,
@@ -40,130 +42,281 @@ function buildBoard(): number[] {
 }
 
 const cells = buildBoard();
+
+const positions = Object.fromEntries(
+  cells.map((n, idx) => {
+    const r = Math.floor(idx / 10);
+    const c = idx % 10;
+    const x = (c + 0.5) * 10;
+    const y = (r + 0.5) * 10;
+    return [n, { r, c, x, y }];
+  })
+);
+
+const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+
+function ladderShape(from: number, to: number) {
+  const a = positions[from];
+  const b = positions[to];
+  if (!a || !b) return null;
+
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const px = -dy / dist;
+  const py = dx / dist;
+
+  const railOffset = 1.25;
+  const x1a = a.x + px * railOffset;
+  const y1a = a.y + py * railOffset;
+  const x2a = b.x + px * railOffset;
+  const y2a = b.y + py * railOffset;
+
+  const x1b = a.x - px * railOffset;
+  const y1b = a.y - py * railOffset;
+  const x2b = b.x - px * railOffset;
+  const y2b = b.y - py * railOffset;
+
+  const rungCount = clamp(Math.floor(dist / 8), 4, 8);
+  const rungs = Array.from({ length: rungCount - 1 }, (_, i) => {
+    const t = (i + 1) / rungCount;
+    const cx = a.x + dx * t;
+    const cy = a.y + dy * t;
+    return {
+      x1: cx - px * railOffset,
+      y1: cy - py * railOffset,
+      x2: cx + px * railOffset,
+      y2: cy + py * railOffset,
+    };
+  });
+
+  return {
+    rails: [
+      { x1: x1a, y1: y1a, x2: x2a, y2: y2a },
+      { x1: x1b, y1: y1b, x2: x2b, y2: y2b },
+    ],
+    rungs,
+  };
+}
+
+function snakePath(from: number, to: number) {
+  const a = positions[from];
+  const b = positions[to];
+  if (!a || !b) return null;
+
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const px = -dy / dist;
+  const py = dx / dist;
+
+  const amp = clamp(dist / 6, 3, 6);
+  const c1x = a.x + dx * 0.33 + px * amp;
+  const c1y = a.y + dy * 0.33 + py * amp;
+  const mx = a.x + dx * 0.5;
+  const my = a.y + dy * 0.5;
+  const c2x = a.x + dx * 0.66 - px * amp;
+  const c2y = a.y + dy * 0.66 - py * amp;
+
+  const d = `M ${a.x} ${a.y} Q ${c1x} ${c1y} ${mx} ${my} Q ${c2x} ${c2y} ${b.x} ${b.y}`;
+  return { d, head: { x: b.x, y: b.y }, tail: { x: a.x, y: a.y } };
+}
 ---
 
-<aside class="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-  <div class="flex items-start justify-between gap-3">
-    <div class="min-w-0">
-      <h2 class="text-[15px] font-semibold text-zinc-700 dark:text-zinc-50">Snakes &amp; Ladders</h2>
-      <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-        Roll the dice and reach 100.
-      </p>
-      <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-600 dark:text-zinc-400">
-        <span class="inline-flex items-center gap-1">
-          <span class="h-2.5 w-2.5 rounded-sm bg-rose-600"></span>
-          <span>snake</span>
-        </span>
-        <span class="inline-flex items-center gap-1">
-          <span class="h-2.5 w-2.5 rounded-sm bg-emerald-600"></span>
-          <span>ladder</span>
-        </span>
-        <span class="inline-flex items-center gap-1">
-          <span class="h-2.5 w-2.5 rounded-full bg-indigo-500"></span>
-          <span>you</span>
-        </span>
-        <span class="inline-flex items-center gap-1">
-          <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
-          <span>computer</span>
-        </span>
+<aside
+  class={`rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900 ${
+    compact ? 'p-3' : 'p-4'
+  }`}
+>
+  <div
+    class={
+      compact
+        ? 'mt-2 grid grid-cols-[minmax(0,1fr)_14rem] items-start gap-0 divide-x divide-zinc-200 dark:divide-zinc-800'
+        : 'mt-2 grid grid-cols-[minmax(0,1fr)_16rem] items-start gap-0 divide-x divide-zinc-200 dark:divide-zinc-800'
+    }
+  >
+    <div class="pr-4">
+      <div class={`relative grid grid-cols-10 ${compact ? 'gap-0.5 max-w-[352px] mx-auto' : 'gap-1'}`} data-sal-board>
+        <svg
+          class="pointer-events-none absolute inset-0 z-[5]"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          {Object.entries(ladders).map(([from, to]) => {
+            const shape = ladderShape(Number(from), Number(to));
+            if (!shape) return null;
+            return (
+              <g class="text-emerald-600/70 dark:text-emerald-400/60">
+                {shape.rails.map((l) => (
+                  <line
+                    x1={l.x1}
+                    y1={l.y1}
+                    x2={l.x2}
+                    y2={l.y2}
+                    stroke="currentColor"
+                    stroke-width="1.2"
+                    stroke-linecap="round"
+                  />
+                ))}
+                {shape.rungs.map((r) => (
+                  <line
+                    x1={r.x1}
+                    y1={r.y1}
+                    x2={r.x2}
+                    y2={r.y2}
+                    stroke="currentColor"
+                    stroke-width="1.1"
+                    stroke-linecap="round"
+                  />
+                ))}
+              </g>
+            );
+          })}
+          {Object.entries(snakes).map(([from, to]) => {
+            const shape = snakePath(Number(from), Number(to));
+            if (!shape) return null;
+            return (
+              <g class="text-orange-600/70 dark:text-orange-400/60">
+                <path
+                  d={shape.d}
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.0"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <circle cx={shape.head.x} cy={shape.head.y} r="1.8" fill="currentColor" />
+                <circle cx={shape.tail.x} cy={shape.tail.y} r="1.1" fill="currentColor" opacity="0.7" />
+              </g>
+            );
+          })}
+        </svg>
+
+        {cells.map((n) => (
+          <div
+            class={`relative flex aspect-square items-center justify-center rounded-md border border-zinc-200 bg-white text-[10px] font-medium text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400 ${
+              compact ? 'text-[9px]' : 'text-[10px]'
+            }`}
+            data-sal-cell={n}
+          >
+            <span class="absolute left-1 top-1 text-[9px] leading-none opacity-90">{n}</span>
+            {snakes[n] && <span class="absolute right-1 top-1 text-[10px] leading-none">🐍</span>}
+            {ladders[n] && <span class="absolute right-1 top-1 text-[10px] leading-none">🪜</span>}
+
+            <span
+              class="absolute bottom-0.5 left-0.5 z-10 text-[14px] leading-none opacity-0"
+              data-sal-token="user"
+              aria-label="You"
+            >
+              🧑‍💻
+            </span>
+            <span
+              class="absolute bottom-0.5 right-0.5 z-10 text-[14px] leading-none opacity-0"
+              data-sal-token="computer"
+              aria-label="Computer"
+            >
+              🤖
+            </span>
+          </div>
+        ))}
+
+        <div
+          class="pointer-events-none absolute z-10 hidden max-w-[140px] -translate-x-1/2 translate-y-[calc(-100%-10px)] rounded-xl border border-white/40 bg-white/55 px-2 py-1 text-[9px] leading-snug text-zinc-900 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-900/45 dark:text-zinc-50"
+          data-sal-bubble="user"
+        >
+          <div data-sal-bubble-text="user">You are here!</div>
+          <div
+            class="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border-b border-r border-white/40 bg-white/55 dark:border-zinc-800/60 dark:bg-zinc-900/45"
+            aria-hidden="true"
+          ></div>
+        </div>
+        <div
+          class="pointer-events-none absolute z-10 hidden max-w-[140px] -translate-x-1/2 translate-y-[calc(-100%-10px)] rounded-xl border border-white/40 bg-white/55 px-2 py-1 text-[9px] leading-snug text-zinc-900 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-900/45 dark:text-zinc-50"
+          data-sal-bubble="computer"
+        >
+          <div data-sal-bubble-text="computer">Computer is here!</div>
+          <div
+            class="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border-b border-r border-white/40 bg-white/55 dark:border-zinc-800/60 dark:bg-zinc-900/45"
+            aria-hidden="true"
+          ></div>
+        </div>
       </div>
     </div>
-    <button
-      type="button"
-      data-sal-reset
-      class="shrink-0 rounded-lg border border-zinc-200 px-2 py-1 text-xs text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-800"
-    >
-      Reset
-    </button>
-  </div>
 
-  <div class="relative mt-4 grid grid-cols-10 gap-1" data-sal-board>
-    {cells.map((n) => (
+    <div class="space-y-3 pl-4">
       <div
-        class={`relative flex aspect-square items-center justify-center rounded-md border border-zinc-200 text-[10px] font-medium dark:border-zinc-800 ${
-          snakes[n]
-            ? 'bg-rose-600 text-white'
-            : ladders[n]
-              ? 'bg-emerald-600 text-white'
-              : 'bg-white text-zinc-600 dark:bg-zinc-950 dark:text-zinc-400'
+        class={`rounded-xl border border-zinc-200 bg-white p-3 text-xs text-zinc-700 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 ${
+          compact ? '' : ''
         }`}
-        data-sal-cell={n}
       >
-        <span class="absolute left-1 top-1 text-[9px] leading-none opacity-90">{n}</span>
-        <span
-          class="absolute bottom-1 left-1 h-2 w-2 rounded-full bg-indigo-500 opacity-0"
-          data-sal-token="user"
-        ></span>
-        <span
-          class="absolute bottom-1 right-1 h-2 w-2 rounded-full bg-amber-500 opacity-0"
-          data-sal-token="computer"
-        ></span>
+        <div class="flex items-center justify-between gap-3">
+          <div class="font-semibold text-zinc-700 dark:text-zinc-50">Activity</div>
+          <div class="text-[11px] text-zinc-500 dark:text-zinc-400">latest first</div>
+        </div>
+        <div
+          class={`mt-2 space-y-1 overflow-auto rounded-lg border border-zinc-200 bg-white p-2 text-[11px] text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 ${
+            compact ? 'max-h-[180px]' : 'max-h-[240px]'
+          }`}
+          data-sal-activity
+        ></div>
       </div>
-    ))}
 
-    <div
-      class="pointer-events-none absolute z-10 hidden max-w-[140px] -translate-x-1/2 translate-y-[calc(-100%-10px)] rounded-xl border border-white/40 bg-white/55 px-2 py-1 text-[9px] leading-snug text-zinc-900 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-900/45 dark:text-zinc-50"
-      data-sal-bubble="user"
-    >
-      <div data-sal-bubble-text="user">You are here!</div>
-      <div
-        class="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border-b border-r border-white/40 bg-white/55 dark:border-zinc-800/60 dark:bg-zinc-900/45"
-        aria-hidden="true"
-      ></div>
-    </div>
-    <div
-      class="pointer-events-none absolute z-10 hidden max-w-[140px] -translate-x-1/2 translate-y-[calc(-100%-10px)] rounded-xl border border-white/40 bg-white/55 px-2 py-1 text-[9px] leading-snug text-zinc-900 shadow-lg backdrop-blur-md dark:border-zinc-800/60 dark:bg-zinc-900/45 dark:text-zinc-50"
-      data-sal-bubble="computer"
-    >
-      <div data-sal-bubble-text="computer">Computer is here!</div>
-      <div
-        class="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1 rotate-45 border-b border-r border-white/40 bg-white/55 dark:border-zinc-800/60 dark:bg-zinc-900/45"
-        aria-hidden="true"
-      ></div>
+      <div class="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <div class="flex items-start justify-between gap-3">
+          <div class="text-xs font-semibold text-zinc-700 dark:text-zinc-50">Score &amp; Controls</div>
+          <button
+            type="button"
+            data-sal-reset
+            class="shrink-0 rounded-lg border border-zinc-200 px-2 py-1 text-[11px] text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-800"
+          >
+            Reset
+          </button>
+        </div>
+
+        <div class="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-[12px] text-zinc-600 dark:text-zinc-400">
+          <div>
+            🧑‍💻
+            <span class="font-semibold text-zinc-700 dark:text-zinc-50" data-sal-user-pos>1</span>
+          </div>
+          <div>
+            🤖
+            <span class="font-semibold text-zinc-700 dark:text-zinc-50" data-sal-computer-pos>1</span>
+          </div>
+          <div class="col-span-2">
+            Turn:
+            <span class="font-semibold text-zinc-700 dark:text-zinc-50" data-sal-turn>You</span>
+          </div>
+          <div class="col-span-2">
+            Last roll:
+            <span class="font-semibold text-zinc-700 dark:text-zinc-50" data-sal-dice>–</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          data-sal-roll
+          class="sal-dice-btn mt-3 inline-flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+          aria-label="Roll dice"
+        >
+          <span
+            class="grid h-10 w-10 place-items-center rounded-lg border border-zinc-200 bg-white text-[22px] leading-none shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+            data-sal-dice-visual
+            aria-hidden="true"
+          >
+            🎲
+          </span>
+          <span>Roll</span>
+        </button>
+
+        <div class="mt-3 text-[15px] font-semibold text-zinc-700 dark:text-zinc-50" data-sal-result></div>
+      </div>
+
+      <div class={`text-[11px] text-zinc-600 dark:text-zinc-400 ${compact ? 'hidden' : ''}`}>
+        Tip: ladders help, snakes hurt.
+      </div>
     </div>
   </div>
-
-  <div class="mt-4 flex items-start justify-between gap-3">
-    <div class="text-xs text-zinc-600 dark:text-zinc-400">
-      <div>
-        You:
-        <span class="font-semibold text-zinc-700 dark:text-zinc-50" data-sal-user-pos>1</span>
-      </div>
-      <div>
-        Computer:
-        <span class="font-semibold text-zinc-700 dark:text-zinc-50" data-sal-computer-pos>1</span>
-      </div>
-      <div class="mt-1">
-        Dice:
-        <span class="font-semibold text-zinc-700 dark:text-zinc-50" data-sal-dice>–</span>
-      </div>
-    </div>
-
-    <div class="flex flex-col items-end gap-2">
-      <button
-        type="button"
-        data-sal-roll
-        class="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
-      >
-        Roll
-      </button>
-      <div class="text-[11px] text-zinc-600 dark:text-zinc-400" data-sal-turn>Turn: You</div>
-    </div>
-  </div>
-
-  <div class="mt-3 text-xs text-zinc-600 dark:text-zinc-400" data-sal-msg>
-    Tip: ladders help, snakes hurt.
-  </div>
-
-  <div class="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
-    <div class="font-semibold text-zinc-700 dark:text-zinc-50">Last 2 moves</div>
-    <div class="mt-1 space-y-1">
-      <div data-sal-move-1>–</div>
-      <div data-sal-move-2>–</div>
-    </div>
-  </div>
-
-  <div class="mt-3 text-[15px] font-semibold text-zinc-700 dark:text-zinc-50" data-sal-result></div>
 </aside>
 
 <div class="pointer-events-none fixed inset-0 z-[60] hidden overflow-hidden" data-sal-confetti></div>
@@ -188,6 +341,25 @@ const cells = buildBoard();
     height: 10px;
     border-radius: 2px;
     animation: sal-confetti-fall 1600ms ease-in forwards;
+  }
+
+  @keyframes sal-dice-wiggle {
+    0% {
+      transform: rotate(0deg) scale(1);
+    }
+    40% {
+      transform: rotate(-8deg) scale(1.02);
+    }
+    80% {
+      transform: rotate(8deg) scale(1.02);
+    }
+    100% {
+      transform: rotate(0deg) scale(1);
+    }
+  }
+
+  .sal-dice-btn[data-rolling='true'] [data-sal-dice-visual] {
+    animation: sal-dice-wiggle 280ms ease-in-out;
   }
 </style>
 
@@ -225,16 +397,15 @@ const cells = buildBoard();
     const userPosEl = root.querySelector('[data-sal-user-pos]');
     const computerPosEl = root.querySelector('[data-sal-computer-pos]');
     const diceEl = root.querySelector('[data-sal-dice]');
-    const msgEl = root.querySelector('[data-sal-msg]');
     const turnEl = root.querySelector('[data-sal-turn]');
-    const move1El = root.querySelector('[data-sal-move-1]');
-    const move2El = root.querySelector('[data-sal-move-2]');
+    const activityEl = root.querySelector('[data-sal-activity]');
     const resultEl = root.querySelector('[data-sal-result]');
     const boardEl = root.querySelector('[data-sal-board]');
     const userBubbleEl = root.querySelector('[data-sal-bubble="user"]');
     const computerBubbleEl = root.querySelector('[data-sal-bubble="computer"]');
     const userBubbleTextEl = root.querySelector('[data-sal-bubble-text="user"]');
     const computerBubbleTextEl = root.querySelector('[data-sal-bubble-text="computer"]');
+    const pipEls = Array.from(root.querySelectorAll('[data-sal-pip]'));
     const confettiEl = document.querySelector('[data-sal-confetti]');
 
     const getCell = (n) => root.querySelector(`[data-sal-cell="${n}"]`);
@@ -272,16 +443,85 @@ const cells = buildBoard();
       }
     };
 
+    const ladderSound = () => {
+      if (!soundArmed) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+
+        const gain = ctx.createGain();
+        gain.gain.value = 0.05;
+        gain.connect(ctx.destination);
+
+        const play = (freq, t, dur) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.value = freq;
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.8, t + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+          osc.connect(g);
+          g.connect(gain);
+          osc.start(t);
+          osc.stop(t + dur);
+        };
+
+        const t0 = ctx.currentTime + 0.01;
+        play(784, t0, 0.10);
+        play(988, t0 + 0.09, 0.11);
+        play(1319, t0 + 0.18, 0.12);
+
+        setTimeout(() => ctx.close(), 700);
+      } catch {
+        // ignore
+      }
+    };
+
+    const snakeSound = () => {
+      if (!soundArmed) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+
+        const gain = ctx.createGain();
+        gain.gain.value = 0.055;
+        gain.connect(ctx.destination);
+
+        const t0 = ctx.currentTime + 0.01;
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(620, t0);
+        osc.frequency.exponentialRampToValueAtTime(170, t0 + 0.22);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.9, t0 + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.24);
+        osc.connect(g);
+        g.connect(gain);
+        osc.start(t0);
+        osc.stop(t0 + 0.25);
+
+        setTimeout(() => ctx.close(), 700);
+      } catch {
+        // ignore
+      }
+    };
+
     let userPos = 1;
     let computerPos = 1;
     let turn = 'user';
     let busy = false;
     let gameOver = false;
-    let moves = ['–', '–'];
+    let activity = ['–'];
     let userBubble = 'You are here!';
     let computerBubble = 'Computer is here!';
     let bubbleActive = 'user';
     let resultText = '';
+    let lastDice = null;
+    let soundArmed = false;
 
     const readStored = () => {
       try {
@@ -316,11 +556,12 @@ const cells = buildBoard();
         turn,
         busy,
         gameOver,
-        moves,
+        activity,
         userBubble,
         computerBubble,
         bubbleActive,
         resultText,
+        lastDice,
       });
     };
 
@@ -361,11 +602,45 @@ const cells = buildBoard();
 
       if (userPosEl) userPosEl.textContent = String(userPos);
       if (computerPosEl) computerPosEl.textContent = String(computerPos);
-      if (turnEl) turnEl.textContent = `Turn: ${turn === 'user' ? 'You' : 'Computer'}`;
-      if (move1El) move1El.textContent = moves[0] ?? '–';
-      if (move2El) move2El.textContent = moves[1] ?? '–';
+      if (turnEl) turnEl.textContent = turn === 'user' ? '🧑‍💻 You' : '🤖 Computer';
       if (rollBtn) rollBtn.disabled = busy || gameOver || turn !== 'user';
       if (resultEl) resultEl.textContent = resultText;
+
+      if (diceEl) diceEl.textContent = lastDice == null ? '–' : String(lastDice);
+
+      if (pipEls.length > 0) {
+        const val = lastDice;
+        const on = new Set(
+          val === 1
+            ? [5]
+            : val === 2
+              ? [1, 9]
+              : val === 3
+                ? [1, 5, 9]
+                : val === 4
+                  ? [1, 3, 7, 9]
+                  : val === 5
+                    ? [1, 3, 5, 7, 9]
+                    : val === 6
+                      ? [1, 3, 4, 6, 7, 9]
+                      : []
+        );
+
+        pipEls.forEach((el) => {
+          const n = Number(el.getAttribute('data-sal-pip') || '0');
+          el.classList.toggle('opacity-0', !on.has(n));
+        });
+      }
+
+      if (activityEl instanceof HTMLElement) {
+        activityEl.innerHTML = '';
+        const max = 5;
+        for (const line of (activity ?? []).slice(0, max)) {
+          const row = document.createElement('div');
+          row.textContent = line;
+          activityEl.appendChild(row);
+        }
+      }
 
       if (userBubbleTextEl) userBubbleTextEl.textContent = userBubble;
       if (computerBubbleTextEl) computerBubbleTextEl.textContent = computerBubble;
@@ -379,7 +654,7 @@ const cells = buildBoard();
     };
 
     const pushMove = (text) => {
-      moves = [text, moves[0] ?? '–'].slice(0, 2);
+      activity = [text, ...(activity ?? [])].slice(0, 20);
       render();
       persist();
     };
@@ -441,25 +716,55 @@ const cells = buildBoard();
       }, 2200);
     };
 
-    const setMsg = (text) => {
-      if (msgEl) msgEl.textContent = text;
-    };
-
     const reset = () => {
       userPos = 1;
       computerPos = 1;
       turn = 'user';
       busy = false;
       gameOver = false;
-      moves = ['–', '–'];
+      activity = ['–'];
       userBubble = 'You are here!';
       computerBubble = 'Computer is here!';
       bubbleActive = 'user';
       resultText = '';
-      if (diceEl) diceEl.textContent = '–';
-      setMsg('Tip: ladders help, snakes hurt.');
+      lastDice = null;
       render();
       clearStored();
+    };
+
+    const diceSound = () => {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const gain = ctx.createGain();
+        gain.gain.value = 0.055;
+        gain.connect(ctx.destination);
+
+        const dur = 0.14;
+        const len = Math.floor(ctx.sampleRate * dur);
+        const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < len; i++) {
+          const t = i / len;
+          data[i] = (Math.random() * 2 - 1) * (1 - t);
+        }
+
+        const src = ctx.createBufferSource();
+        src.buffer = buffer;
+
+        const hp = ctx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = 700;
+
+        src.connect(hp);
+        hp.connect(gain);
+        src.start();
+        src.stop(ctx.currentTime + dur);
+        setTimeout(() => ctx.close(), 500);
+      } catch {
+        // ignore
+      }
     };
 
     const step = (fromPos, dice) => {
@@ -470,30 +775,34 @@ const cells = buildBoard();
     };
 
     const describeJump = (next, jumpedTo) => {
-      if (!jumpedTo) return '';
-      if (ladders[next]) return `ladder ${next}→${jumpedTo}`;
-      if (snakes[next]) return `snake ${next}→${jumpedTo}`;
-      return `${next}→${jumpedTo}`;
+      if (!jumpedTo) return { kind: '', emoji: '', text: '' };
+      if (ladders[next]) return { kind: 'ladder', emoji: '🪜', text: `${next}→${jumpedTo}` };
+      if (snakes[next]) return { kind: 'snake', emoji: '🐍', text: `${next}→${jumpedTo}` };
+      return { kind: 'jump', emoji: '➡️', text: `${next}→${jumpedTo}` };
     };
 
     const computerMove = (instant = false) => {
       if (gameOver) return;
       bubbleActive = 'computer';
       const dice2 = Math.floor(Math.random() * 6) + 1;
-      if (diceEl) diceEl.textContent = String(dice2);
+      lastDice = dice2;
 
       const { next: next2, final: final2, jumpedTo: jumpedTo2 } = step(computerPos, dice2);
       const before = computerPos;
       computerPos = final2;
 
-      const jumpText = describeJump(next2, jumpedTo2);
-      computerBubble = jumpText
-        ? `Computer moved ${dice2} ( ${jumpText} )`
-        : `Computer walked ${dice2} steps`;
+      const jump = describeJump(next2, jumpedTo2);
+      computerBubble = jump.text
+        ? `🤖 moved ${dice2} ${jump.emoji} ( ${jump.text} )`
+        : `🤖 walked ${dice2} steps`;
+
+      if (jump.kind === 'ladder') ladderSound();
+      if (jump.kind === 'snake') snakeSound();
+
       pushMove(
-        jumpText
-          ? `Computer rolled ${dice2}: ${before} → ${final2} (${jumpText})`
-          : `Computer rolled ${dice2}: ${before} → ${final2}`
+        jump.text
+          ? `🤖 rolled ${dice2}: ${before} → ${final2} ${jump.emoji} (${jump.text})`
+          : `🤖 rolled ${dice2}: ${before} → ${final2}`
       );
 
       if (computerPos === 100) {
@@ -521,22 +830,35 @@ const cells = buildBoard();
       if (busy || gameOver) return;
       if (turn !== 'user') return;
 
+      soundArmed = true;
+
+      if (rollBtn instanceof HTMLElement) {
+        rollBtn.setAttribute('data-rolling', 'true');
+        setTimeout(() => rollBtn.removeAttribute('data-rolling'), 320);
+      }
+
+      diceSound();
+
       bubbleActive = 'user';
 
       const dice = Math.floor(Math.random() * 6) + 1;
-      if (diceEl) diceEl.textContent = String(dice);
+      lastDice = dice;
 
       const { next, final, jumpedTo } = step(userPos, dice);
       const before = userPos;
       userPos = final;
 
-      const jumpText = describeJump(next, jumpedTo);
-      userBubble = jumpText ? `You moved ${dice} ( ${jumpText} )` : `You walked ${dice} steps`;
-      pushMove(
-        jumpText ? `You rolled ${dice}: ${before} → ${final} (${jumpText})` : `You rolled ${dice}: ${before} → ${final}`
-      );
+      const jump = describeJump(next, jumpedTo);
+      userBubble = jump.text ? `🧑‍💻 moved ${dice} ${jump.emoji} ( ${jump.text} )` : `🧑‍💻 walked ${dice} steps`;
 
-      setMsg('');
+      if (jump.kind === 'ladder') ladderSound();
+      if (jump.kind === 'snake') snakeSound();
+
+      pushMove(
+        jump.text
+          ? `🧑‍💻 rolled ${dice}: ${before} → ${final} ${jump.emoji} (${jump.text})`
+          : `🧑‍💻 rolled ${dice}: ${before} → ${final}`
+      );
 
       if (userPos === 100) {
         gameOver = true;
@@ -564,18 +886,23 @@ const cells = buildBoard();
       if (stored.turn === 'user' || stored.turn === 'computer') turn = stored.turn;
       if (typeof stored.busy === 'boolean') busy = stored.busy;
       if (typeof stored.gameOver === 'boolean') gameOver = stored.gameOver;
-      if (Array.isArray(stored.moves)) moves = stored.moves.slice(0, 2);
+      if (Array.isArray(stored.activity)) activity = stored.activity.slice(0, 20);
+      else if (Array.isArray(stored.moves)) activity = stored.moves.slice(0, 2);
       if (typeof stored.userBubble === 'string') userBubble = stored.userBubble;
       if (typeof stored.computerBubble === 'string') computerBubble = stored.computerBubble;
       if (stored.bubbleActive === 'user' || stored.bubbleActive === 'computer') {
         bubbleActive = stored.bubbleActive;
       }
+      if (typeof stored.lastDice === 'number') lastDice = stored.lastDice;
     }
 
     render();
     persist();
 
-    if (busy && turn === 'computer' && !gameOver) {
+    if (turn === 'computer' && !gameOver) {
+      busy = true;
+      render();
+      persist();
       setTimeout(() => {
         computerMove(true);
       }, 0);

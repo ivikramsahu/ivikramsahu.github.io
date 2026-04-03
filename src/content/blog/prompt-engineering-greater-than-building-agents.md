@@ -1,5 +1,6 @@
 ---
 title: Prompt Engineering > Building Agents
+description: Why clear prompts (role, context, constraints) matter more than agent frameworks—and how to write them like algorithms to save iterations and tokens.
 date: 2026-04-03
 draft: false
 ---

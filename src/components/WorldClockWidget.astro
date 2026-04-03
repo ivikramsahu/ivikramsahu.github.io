@@ -1,0 +1,407 @@
+---
+---
+
+<aside class="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+  <div class="flex items-start justify-between gap-3">
+    <div class="min-w-0">
+      <h2 class="text-[15px] font-semibold text-zinc-700 dark:text-zinc-50">Clock</h2>
+      <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Analog time, time zones, and epoch.</p>
+    </div>
+
+    <label class="sr-only" for="tz-select">Time zone</label>
+    <select
+      id="tz-select"
+      class="shrink-0 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700 shadow-sm outline-none hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-800"
+      data-wc-tz
+    ></select>
+  </div>
+
+  <div class="mt-4 grid grid-cols-[140px_minmax(0,1fr)] gap-4">
+    <div class="space-y-3">
+      <div class="mx-auto grid h-[140px] w-[140px] place-items-center rounded-full border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950" data-wc-clock>
+        <div class="relative h-[112px] w-[112px] rounded-full border border-zinc-200 dark:border-zinc-800">
+          <div class="absolute left-1/2 top-1/2 h-[40px] w-[2px] -translate-x-1/2 -translate-y-full rounded bg-zinc-800 dark:bg-zinc-100" style="transform-origin: 50% 100%" data-wc-hand="hour"></div>
+          <div class="absolute left-1/2 top-1/2 h-[50px] w-[2px] -translate-x-1/2 -translate-y-full rounded bg-zinc-800/80 dark:bg-zinc-100/80" style="transform-origin: 50% 100%" data-wc-hand="minute"></div>
+          <div class="absolute left-1/2 top-1/2 h-[54px] w-[1px] -translate-x-1/2 -translate-y-full rounded bg-rose-600" style="transform-origin: 50% 100%" data-wc-hand="second"></div>
+          <div class="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-800 dark:bg-zinc-100"></div>
+        </div>
+      </div>
+
+      <div class="space-y-2 text-center">
+        <button
+          type="button"
+          class="mx-auto inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-800"
+          data-wc-date-btn
+        >
+          <span data-wc-date-text>–</span>
+        </button>
+        <input type="date" class="hidden" data-wc-date-input />
+      </div>
+
+      <div class="space-y-1 text-center">
+        <div class="text-[11px] text-zinc-500 dark:text-zinc-400">Current epoch (seconds)</div>
+        <button
+          type="button"
+          class="mx-auto inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-mono text-[12px] text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+          data-wc-epoch-copy
+        >
+          <span data-wc-epoch>–</span>
+          <span class="font-sans text-[11px] text-zinc-500 dark:text-zinc-400">Copy</span>
+        </button>
+      </div>
+
+      <div class="hidden space-y-1 text-center" data-wc-selected-epoch-panel>
+        <div class="text-[11px] text-zinc-500 dark:text-zinc-400">Selected date epoch (seconds)</div>
+        <div class="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-mono text-[12px] text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+            data-wc-selected-epoch-copy
+          >
+            <span data-wc-selected-epoch>–</span>
+            <span class="font-sans text-[11px] text-zinc-500 dark:text-zinc-400">Copy</span>
+          </button>
+          <button
+            type="button"
+            class="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs text-zinc-700 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            data-wc-selected-clear
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <div class="text-center text-[11px] text-zinc-500 dark:text-zinc-400" data-wc-status></div>
+    </div>
+
+    <div class="min-w-0">
+      <div class="text-xs font-semibold text-zinc-700 dark:text-zinc-50">Time zones</div>
+      <div class="mt-2 space-y-2" data-wc-zones></div>
+    </div>
+  </div>
+</aside>
+
+<script is:inline>
+  (() => {
+    const root = document.currentScript && document.currentScript.parentElement;
+    if (!root) return;
+
+    const tzSelect = root.querySelector('[data-wc-tz]');
+    const handHour = root.querySelector('[data-wc-hand="hour"]');
+    const handMinute = root.querySelector('[data-wc-hand="minute"]');
+    const handSecond = root.querySelector('[data-wc-hand="second"]');
+    const dateTextEl = root.querySelector('[data-wc-date-text]');
+    const dateBtn = root.querySelector('[data-wc-date-btn]');
+    const dateInput = root.querySelector('[data-wc-date-input]');
+    const epochEl = root.querySelector('[data-wc-epoch]');
+    const epochCopyBtn = root.querySelector('[data-wc-epoch-copy]');
+    const zonesEl = root.querySelector('[data-wc-zones]');
+    const statusEl = root.querySelector('[data-wc-status]');
+    const selectedPanel = root.querySelector('[data-wc-selected-epoch-panel]');
+    const selectedEpochEl = root.querySelector('[data-wc-selected-epoch]');
+    const selectedCopyBtn = root.querySelector('[data-wc-selected-epoch-copy]');
+    const selectedClearBtn = root.querySelector('[data-wc-selected-clear]');
+
+    if (
+      !tzSelect ||
+      !(tzSelect instanceof HTMLSelectElement) ||
+      !handHour ||
+      !handMinute ||
+      !handSecond ||
+      !dateTextEl ||
+      !dateBtn ||
+      !dateInput ||
+      !epochEl ||
+      !epochCopyBtn ||
+      !zonesEl ||
+      !statusEl ||
+      !selectedPanel ||
+      !selectedEpochEl ||
+      !selectedCopyBtn ||
+      !selectedClearBtn
+    ) {
+      return;
+    }
+
+    const zones = [
+      { id: 'Asia/Kolkata', label: 'IST' },
+      { id: 'UTC', label: 'UTC' },
+      { id: 'Europe/London', label: 'London' },
+      { id: 'America/New_York', label: 'New York' },
+      { id: 'America/Los_Angeles', label: 'Los Angeles' },
+      { id: 'Asia/Tokyo', label: 'Tokyo' },
+    ];
+
+    let activeZone = 'Asia/Kolkata';
+    let selectedEpoch = null;
+
+    const zoneRows = new Map();
+    const zoneTimeEls = new Map();
+
+    const setStatus = (text) => {
+      statusEl.textContent = text || '';
+      if (text) {
+        setTimeout(() => {
+          if (statusEl.textContent === text) statusEl.textContent = '';
+        }, 1200);
+      }
+    };
+
+    const copyToClipboard = async (text) => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch {
+        return false;
+      }
+
+      try {
+        const el = document.createElement('textarea');
+        el.value = text;
+        el.setAttribute('readonly', '');
+        el.style.position = 'fixed';
+        el.style.left = '-9999px';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    const getParts = (date, timeZone) => {
+      const dtf = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        hour12: false,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        weekday: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      const parts = dtf.formatToParts(date);
+      const map = {};
+      for (const p of parts) {
+        if (p.type !== 'literal') map[p.type] = p.value;
+      }
+      return map;
+    };
+
+    const timeString = (date, timeZone) => {
+      const dtf = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return dtf.format(date);
+    };
+
+    const dateLabel = (date, timeZone) => {
+      const dtf = new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        weekday: 'short',
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+      });
+      return dtf.format(date);
+    };
+
+    const getTimeZoneOffsetMinutes = (timeZone, date) => {
+      const parts = getParts(date, timeZone);
+      const asUTC = Date.UTC(
+        Number(parts.year),
+        Number(parts.month) - 1,
+        Number(parts.day),
+        Number(parts.hour),
+        Number(parts.minute),
+        Number(parts.second)
+      );
+      return (asUTC - date.getTime()) / 60000;
+    };
+
+    const zonedMidnightToEpochSeconds = (yyyyMmDd, timeZone) => {
+      const [y, m, d] = yyyyMmDd.split('-').map((n) => Number(n));
+      if (!y || !m || !d) return null;
+
+      const guess = new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
+      const off1 = getTimeZoneOffsetMinutes(timeZone, guess);
+      const step1 = new Date(guess.getTime() - off1 * 60000);
+      const off2 = getTimeZoneOffsetMinutes(timeZone, step1);
+      const final = new Date(guess.getTime() - off2 * 60000);
+      return Math.floor(final.getTime() / 1000);
+    };
+
+    const setActiveStyles = () => {
+      for (const z of zones) {
+        const row = zoneRows.get(z.id);
+        if (!(row instanceof HTMLButtonElement)) continue;
+
+        row.className =
+          'w-full rounded-lg border px-3 py-2 text-left text-xs shadow-sm transition-colors ' +
+          (z.id === activeZone
+            ? 'border-zinc-300 bg-zinc-50 text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100'
+            : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800');
+      }
+    };
+
+    const renderZones = () => {
+      zonesEl.innerHTML = '';
+      zoneRows.clear();
+      zoneTimeEls.clear();
+
+      for (const z of zones) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+
+        const top = document.createElement('div');
+        top.className = 'flex items-center justify-between gap-3';
+
+        const label = document.createElement('div');
+        label.className = 'font-semibold';
+        label.textContent = z.label;
+
+        const time = document.createElement('div');
+        time.className = 'font-mono text-[12px]';
+
+        top.appendChild(label);
+        top.appendChild(time);
+        btn.appendChild(top);
+
+        const sub = document.createElement('div');
+        sub.className = 'mt-1 text-[11px] text-zinc-500 dark:text-zinc-400';
+        sub.textContent = z.id;
+        btn.appendChild(sub);
+
+        btn.addEventListener('click', () => {
+          activeZone = z.id;
+          tzSelect.value = activeZone;
+          setActiveStyles();
+        });
+
+        zoneRows.set(z.id, btn);
+        zoneTimeEls.set(z.id, time);
+        zonesEl.appendChild(btn);
+      }
+
+      setActiveStyles();
+    };
+
+    const updateZoneTimes = (now) => {
+      for (const z of zones) {
+        const timeEl = zoneTimeEls.get(z.id);
+        if (timeEl) timeEl.textContent = timeString(now, z.id);
+      }
+    };
+
+    const tick = () => {
+      const now = new Date();
+
+      const epoch = Math.floor(Date.now() / 1000);
+      epochEl.textContent = String(epoch);
+
+      dateTextEl.textContent = dateLabel(now, activeZone);
+
+      const parts = getParts(now, activeZone);
+      const h = Number(parts.hour);
+      const m = Number(parts.minute);
+      const s = Number(parts.second);
+
+      const hourAngle = ((h % 12) + m / 60) * 30;
+      const minuteAngle = (m + s / 60) * 6;
+      const secondAngle = s * 6;
+
+      handHour.style.transform = `translate(-50%, -100%) rotate(${hourAngle}deg)`;
+      handMinute.style.transform = `translate(-50%, -100%) rotate(${minuteAngle}deg)`;
+      handSecond.style.transform = `translate(-50%, -100%) rotate(${secondAngle}deg)`;
+
+      if (selectedEpoch != null) {
+        selectedEpochEl.textContent = String(selectedEpoch);
+      }
+
+      updateZoneTimes(now);
+    };
+
+    const init = () => {
+      tzSelect.innerHTML = '';
+      for (const z of zones) {
+        const opt = document.createElement('option');
+        opt.value = z.id;
+        opt.textContent = `${z.label} (${z.id})`;
+        tzSelect.appendChild(opt);
+      }
+
+      tzSelect.value = activeZone;
+      renderZones();
+      updateZoneTimes(new Date());
+
+      tzSelect.addEventListener('change', () => {
+        activeZone = tzSelect.value;
+        setActiveStyles();
+      });
+
+      epochCopyBtn.addEventListener('click', async () => {
+        const ok = await copyToClipboard(epochEl.textContent || '');
+        setStatus(ok ? 'Copied' : 'Copy failed');
+      });
+
+      selectedCopyBtn.addEventListener('click', async () => {
+        const ok = await copyToClipboard(selectedEpochEl.textContent || '');
+        setStatus(ok ? 'Copied' : 'Copy failed');
+      });
+
+      const openPicker = () => {
+        if (!(dateInput instanceof HTMLInputElement)) return;
+        try {
+          if (typeof dateInput.showPicker === 'function') {
+            dateInput.showPicker();
+          } else {
+            dateInput.focus();
+            dateInput.click();
+          }
+        } catch {
+          dateInput.focus();
+        }
+      };
+
+      dateBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openPicker();
+      });
+
+      dateInput.addEventListener('change', () => {
+        const value = dateInput.value;
+        if (!value) return;
+        const epoch = zonedMidnightToEpochSeconds(value, activeZone);
+        if (epoch == null) return;
+        selectedEpoch = epoch;
+        selectedPanel.classList.remove('hidden');
+        selectedEpochEl.textContent = String(epoch);
+        setStatus('Epoch generated');
+      });
+
+      selectedClearBtn.addEventListener('click', () => {
+        selectedEpoch = null;
+        dateInput.value = '';
+        selectedPanel.classList.add('hidden');
+        setStatus('Cleared');
+      });
+
+      tick();
+      setInterval(tick, 1000);
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>

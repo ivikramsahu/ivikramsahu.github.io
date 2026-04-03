@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import SnakesAndLadders from '../components/SnakesAndLadders.astro';
+import WorldClockWidget from '../components/WorldClockWidget.astro';
 import QuotesWidget from '../components/QuotesWidget.astro';
 
 const posts = (await getCollection('blog'))
@@ -155,7 +155,7 @@ function renderInlineCode(input: string) {
       <aside class="mt-8 lg:mt-0">
         <div class="lg:sticky lg:top-28 space-y-4">
           <QuotesWidget />
-          <SnakesAndLadders />
+          <WorldClockWidget />
         </div>
       </aside>
     </div>

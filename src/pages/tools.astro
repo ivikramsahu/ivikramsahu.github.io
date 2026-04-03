@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PromptGenerator from '../components/PromptGenerator.astro';
 import MarkdownTool from '../components/MarkdownTool.astro';
 import JsonTool from '../components/JsonTool.astro';
+import SnakesAndLadders from '../components/SnakesAndLadders.astro';
 ---
 
 <BaseLayout title="Tools" description="Utilities and small experiments." containerClass="max-w-7xl">
@@ -42,6 +43,15 @@ import JsonTool from '../components/JsonTool.astro';
       >
         JSON toolkit
       </button>
+      <button
+        id="open-snakes-ladders"
+        type="button"
+        class="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-800"
+        aria-controls="snakes-ladders"
+        aria-expanded="false"
+      >
+        Snakes &amp; Ladders
+      </button>
     </div>
 
     <div id="prompt-generator" class="hidden pt-4">
@@ -76,6 +86,17 @@ import JsonTool from '../components/JsonTool.astro';
 
       <JsonTool />
     </div>
+
+    <div id="snakes-ladders" class="hidden pt-4">
+      <div class="mb-4">
+        <h2 class="text-[24px] font-semibold tracking-tight">Snakes &amp; Ladders</h2>
+        <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+          Roll the dice and reach 100.
+        </p>
+      </div>
+
+      <SnakesAndLadders compact />
+    </div>
   </div>
 
   <script is:inline>
@@ -98,6 +119,12 @@ import JsonTool from '../components/JsonTool.astro';
           panelId: 'json-tool',
           focusId: 'json-input',
           hash: '#json-tool',
+        },
+        {
+          buttonId: 'open-snakes-ladders',
+          panelId: 'snakes-ladders',
+          focusId: '',
+          hash: '#snakes-ladders',
         },
       ];
 
@@ -126,7 +153,13 @@ import JsonTool from '../components/JsonTool.astro';
         if (btn) btn.setAttribute('aria-expanded', 'true');
         panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         const first = focusId ? document.getElementById(focusId) : null;
-        if (first && first instanceof HTMLElement) first.focus();
+        if (first && first instanceof HTMLElement) {
+          first.focus();
+          return;
+        }
+
+        const fallback = panel.querySelector('input, textarea, button, a[href], [tabindex]:not([tabindex="-1"])');
+        if (fallback && fallback instanceof HTMLElement) fallback.focus();
       };
 
       for (const t of entries) {
