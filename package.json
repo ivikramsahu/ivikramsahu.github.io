@@ -13,6 +13,7 @@
     "repair:hashnode": "node ./scripts/repair-hashnode-posts.mjs"
   },
   "dependencies": {
+    "@astrojs/mdx": "^3.1.0",
     "@astrojs/tailwind": "^5.1.0",
     "astro": "^4.16.19"
   },

@@ -1,0 +1,184 @@
+---
+const milestones = [
+  {
+    range: '2016 - 2018',
+    title: 'Core Engineering Foundation',
+    role: 'Software Engineer',
+    company: 'Pepipost',
+    growth:
+      'Focused on building strong engineering fundamentals by writing clean, efficient code and developing core software features.',
+    highlights: [
+      'Debugging, troubleshooting, and code reviews to improve system performance and code quality.',
+      'Collaborated across teams to ensure smooth project progress.',
+    ],
+  },
+  {
+    range: '2018 - 2021',
+    title: 'Technical Leadership & Scaling',
+    role: 'Senior Software Engineer',
+    company: 'Pepipost',
+    growth:
+      'Transitioned into a leadership capacity, taking ownership of backend stability and mentoring junior developers on best practices.',
+    highlights: [
+      'Architected and built an event segregation service that scaled from 10 million to 1 billion events per minute.',
+      'Standardized APIs, SDKs, and libraries using tools like Swagger and Postman.',
+    ],
+    links: [
+      {
+        label: 'Email tutorials (author)',
+        url: 'https://netcorecloud.com/tutorials/author/vikram/',
+      },
+    ],
+  },
+  {
+    range: 'Feb 2021 - May 2021',
+    title: 'Bridging Engineering and Community',
+    role: 'Developer Evangelist',
+    company: 'Applozic',
+    growth:
+      'Pivoted from internal backend development to external developer advocacy, focusing on onboarding strategies and product promotion.',
+    highlights: [
+      'Conceptualized and rebuilt the tutorial platform from scratch using a headless CMS.',
+      'Engaged globally with 1,000 developers to gather product insights and boosted traffic through guides and community engagement.',
+    ],
+  },
+  {
+    range: 'Jun 2021 - Apr 2022',
+    title: 'Scaling Developer Advocacy',
+    role: 'Developer Advocate',
+    company: 'Postman',
+    growth:
+      'Acted as a bridge between developer communities and internal product/sales teams, ensuring alignment on new features.',
+    highlights: [
+      'Educated the community through technical blogs, tutorials, webinars, and offline meetups.',
+      'Automated live session calendars using GitHub boards to create smoother operational workflows.',
+    ],
+    links: [
+      {
+        label: 'Postman blog (author page)',
+        url: 'https://blog.postman.com/author/vikram-sahu/',
+      },
+    ],
+  },
+  {
+    range: 'May 2022 - Dec 2024',
+    title: 'Product Leadership & Revenue Impact',
+    role: 'Product Manager & Lead Developer Experience',
+    company: 'NetcoreCloud',
+    growth:
+      'Fully transitioned into product management, driving go-to-market strategy, growth initiatives, and direct revenue outcomes.',
+    highlights: [
+      'Co-founded Emaildojo (10X web traffic) and Velocity ($50K monthly profits).',
+      'Launched 3 products and increased adoption by 35%.',
+      'Reduced support tickets by 30% via a customer feedback loop.',
+      'Cut onboarding time by 2 weeks using Salesforce automation and improved API documentation.',
+    ],
+    links: [
+      {
+        label: 'Emaildojo',
+        url: 'https://emaildojo.io/',
+      },
+      {
+        label: 'Technical blogs infrastructure',
+        url: 'https://tech.netcorecloud.com/category/engineering/',
+      },
+    ],
+  },
+  {
+    range: 'Jan 2025 - Present',
+    title: 'Documentation Infrastructure and Advocacy',
+    role: 'Developer Relations Engineer',
+    company: 'Harness',
+    growth:
+      'Operating in a strategic DevRel role that blends infrastructure ownership, team mentoring, and cross-functional collaboration at enterprise scale.',
+    highlights: [
+      'Own Harness Docs and API infrastructure and improve developer onboarding through clear documentation.',
+      'Build internal automations and tools to reduce friction for developers.',
+      'Mentor DevRel teams while collaborating with product and engineering to relay community feedback.',
+    ],
+    links: [
+      {
+        label: 'developer.harness.io',
+        url: 'https://developer.harness.io',
+      },
+      {
+        label: 'apidocs.harness.io',
+        url: 'https://apidocs.harness.io',
+      },
+    ],
+  },
+];
+
+const orderedMilestones = [...milestones].reverse();
+---
+
+<section class="not-prose my-6">
+  <div class="rounded-2xl border border-zinc-200 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/50 sm:p-6">
+    <div class="flex flex-col gap-1">
+      <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">Roadmap</h3>
+      <p class="text-sm text-zinc-600 dark:text-zinc-400">
+        A chronological view of my journey across engineering, DevRel, and product leadership.
+      </p>
+    </div>
+
+    <div class="mt-6 grid gap-4">
+      {orderedMilestones.map((m) => (
+        <div class="grid grid-cols-[18px_1fr] gap-4">
+          <div class="relative">
+            <div class="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gradient-to-b from-zinc-200 via-zinc-200 to-transparent dark:from-zinc-800 dark:via-zinc-800" />
+            <div class="relative mt-1 h-4 w-4 rounded-full border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-950" />
+          </div>
+
+          <div class="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div class="min-w-0">
+                <div class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{m.title}</div>
+                <div class="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+                  <span class="font-medium">{m.role}</span>
+                  <span class="text-zinc-400 dark:text-zinc-600"> · </span>
+                  <span>{m.company}</span>
+                </div>
+              </div>
+              <div class="shrink-0 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+                {m.range}
+              </div>
+            </div>
+
+            <div class="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{m.growth}</div>
+
+            <ul class="mt-4 space-y-2 text-sm text-zinc-700 dark:text-zinc-300">
+              {m.highlights.map((h) => (
+                <li class="grid grid-cols-[16px_1fr] gap-2">
+                  <span class="mt-[2px] inline-block h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                  <span class="min-w-0">{h}</span>
+                </li>
+              ))}
+            </ul>
+
+            {m.links?.length ? (
+              <div class="mt-4">
+                <div class="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                  Work links
+                </div>
+                <ul class="mt-2 space-y-1 text-sm">
+                  {m.links.map((l) => (
+                    <li>
+                      <a
+                        href={l.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="no-underline text-[#174FA9] hover:text-[#174FA9] border-b-0 hover:border-b-0"
+                      >
+                        {l.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

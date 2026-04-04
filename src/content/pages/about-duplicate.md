@@ -1,0 +1,49 @@
+# About Me
+
+<div class="not-prose my-6">
+  <img
+    src="/about.png"
+    alt="Vikram Sahu"
+    class="w-full rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-800"
+    loading="lazy"
+  />
+</div>
+
+Hey, thanks for stopping by!
+
+I’m Vikram Sahu, a <a href="https://medium.com/geekculture/whats-a-day-to-day-of-a-developer-relations-engineer-like-d7967cf0b33c" target="_blank" rel="noopener noreferrer">Developer Relations Engineer</a> who works closely with product, engineering, and developer communities to help enterprise products succeed.
+
+In my day-to-day work, I:
+
+  * Simplify complex product features
+  * Write clear technical documentation
+  * Improve developer onboarding
+  * Collaborate with product and engineering teams for feedback and latest features
+  * Manage <a href="https://developer.harness.io" target="_blank" rel="noopener noreferrer">Harness Docs</a> and <a href="https://apidocs.harness.io" target="_blank" rel="noopener noreferrer">API</a> infrastructure
+  * Mentor DevRel teams
+  * Build automations and tools to reduce friction
+
+
+At a high level, I help organizations connect their products with developers by making tools, platforms, and APIs easier to learn, use, and trust. My work blends technical depth, product thinking, and community engagement to create better developer experiences and drive real adoption.
+
+## What Drives Me
+
+**Community First**
+Great technology only succeeds when people can learn, use, and share it. I contribute through talks, workshops, tutorials, and writing to help developers grow and succeed.
+
+**Clarity Over Complexity**
+Technology can feel overwhelming. I focus on simplifying APIs, tools, and workflows without losing the technical depth that developers need.
+
+**Hands-On Learning**
+I strongly believe in learning by doing. I experiment, build, and share real experiences — including the lessons learned along the way.
+
+## Journey, Growth & Milestones
+
+## Let's Connect
+
+I'm always open to connecting with fellow developers, sharing knowledge, and collaborating on interesting projects. Whether you have questions, want to discuss technology, or just want to chat about the latest trends in DevRel, feel free to reach out!
+
+- <a href="https://www.linkedin.com/in/ivikramsahu/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+- <a href="https://twitter.com/vikram_sahu" target="_blank" rel="noopener noreferrer">Twitter</a>
+- Email: ivikramsahu(at)gmail(dot)com
+
