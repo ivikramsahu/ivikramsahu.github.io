@@ -7,4 +7,88 @@ import AboutContent from '../content/pages/about.mdx';
   <div class="openai-prose mx-auto w-full max-w-[46rem] min-w-0">
     <AboutContent />
   </div>
+
+  <script>
+    (() => {
+      const container = document.querySelector('.openai-prose');
+      if (!container) return;
+
+      const headings = Array.from(container.querySelectorAll('h1, h2, h3, h4, h5, h6'));
+      if (headings.length === 0) return;
+
+      const used = new Set();
+      for (const h of headings) {
+        if (h.id) used.add(h.id);
+      }
+
+      const slugify = (s) => {
+        return String(s || '')
+          .toLowerCase()
+          .trim()
+          .replace(/['’]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+      };
+
+      const ensureId = (h) => {
+        if (h.id) return h.id;
+        const base = slugify(h.textContent);
+        let id = base || 'section';
+        let n = 2;
+        while (used.has(id)) {
+          id = `${base || 'section'}-${n}`;
+          n += 1;
+        }
+        h.id = id;
+        used.add(id);
+        return id;
+      };
+
+      const copyText = async (text) => {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      };
+
+      const copyHeadingLink = async (h) => {
+        const id = ensureId(h);
+        const u = new URL(window.location.href);
+        u.hash = id;
+        await copyText(u.toString());
+        window.history.replaceState(null, '', u.toString());
+
+        const prevTitle = h.getAttribute('title') || '';
+        h.setAttribute('title', 'Copied link');
+        window.setTimeout(() => {
+          if (prevTitle) h.setAttribute('title', prevTitle);
+          else h.removeAttribute('title');
+        }, 1200);
+      };
+
+      for (const h of headings) {
+        ensureId(h);
+        h.classList.add('cursor-pointer', 'select-none');
+        h.setAttribute('role', 'button');
+        h.tabIndex = 0;
+        h.addEventListener('click', () => {
+          copyHeadingLink(h).catch(() => {});
+        });
+        h.addEventListener('keydown', (e) => {
+          if (e.key !== 'Enter' && e.key !== ' ') return;
+          e.preventDefault();
+          copyHeadingLink(h).catch(() => {});
+        });
+      }
+    })();
+  </script>
 </BaseLayout>
