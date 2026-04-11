@@ -130,8 +130,12 @@ const metaDescription = description ?? 'Writing and notes.';
             <source srcset="/mascot.png" type="image/png" />
             <img src="/mascot.svg" alt="Vikram mascot" class="h-[75px] w-[75px]" />
           </picture>
-          <span class="font-hal truncate text-[30px] leading-none font-semibold tracking-tight text-black dark:text-zinc-50">
-            {siteName}
+          <span
+            id="site-title"
+            class="font-hal truncate text-[30px] leading-none font-semibold tracking-tight text-black dark:text-zinc-50"
+            data-typing-text={siteName}
+          >
+            <span id="site-title-prefix"></span><span id="site-title-word"></span><span id="site-title-cursor" aria-hidden="true">_</span>
           </span>
         </a>
         <nav class="flex shrink-0 items-center gap-4 text-[16px]">
@@ -334,6 +338,104 @@ const metaDescription = description ?? 'Writing and notes.';
           document.addEventListener('DOMContentLoaded', init);
         } else {
           init();
+        }
+      })();
+    </script>
+
+    <style is:inline>
+      #site-title {
+        white-space: nowrap;
+      }
+
+      #site-title-cursor {
+        display: inline-block;
+        margin-left: 1px;
+        opacity: 1;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #site-title-cursor {
+          display: none;
+        }
+      }
+    </style>
+
+    <script is:inline>
+      (() => {
+        const run = () => {
+          if (window.__siteTitleLoopRunning) return;
+          window.__siteTitleLoopRunning = true;
+
+          const host = document.getElementById('site-title');
+          const prefixEl = document.getElementById('site-title-prefix');
+          const wordEl = document.getElementById('site-title-word');
+          const cursorEl = document.getElementById('site-title-cursor');
+
+          if (!host || !prefixEl || !wordEl || !cursorEl) return;
+
+          const prefersReduced =
+            typeof window !== 'undefined' &&
+            window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+          const prefix = "Vikram's ";
+          const words = ['Focushours', 'Blog', 'Tools', 'Experiments'];
+
+          if (prefersReduced) {
+            prefixEl.textContent = prefix;
+            wordEl.textContent = words[0];
+            cursorEl.style.display = 'none';
+            return;
+          }
+
+          const sleep = (ms) => new Promise((r) => window.setTimeout(r, ms));
+
+          const typeInto = async (el, text, delay) => {
+            el.textContent = '';
+            for (let i = 0; i < text.length; i += 1) {
+              el.textContent += text[i];
+              await sleep(delay);
+            }
+          };
+
+          const backspace = async (el, delay) => {
+            while (el.textContent && el.textContent.length > 0) {
+              el.textContent = el.textContent.slice(0, -1);
+              await sleep(delay);
+            }
+          };
+
+          const blinkCursor = async (times) => {
+            for (let i = 0; i < times; i += 1) {
+              cursorEl.style.opacity = '0';
+              await sleep(500);
+              cursorEl.style.opacity = '1';
+              await sleep(500);
+            }
+          };
+
+          (async () => {
+            prefixEl.textContent = '';
+            wordEl.textContent = '';
+            cursorEl.style.opacity = '1';
+
+            await typeInto(prefixEl, prefix, 55);
+            await typeInto(wordEl, words[0], 70);
+
+            let idx = 0;
+            while (true) {
+              await blinkCursor(3);
+              await backspace(wordEl, 35);
+              idx = (idx + 1) % words.length;
+              await typeInto(wordEl, words[idx], 70);
+            }
+          })();
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', run);
+        } else {
+          run();
         }
       })();
     </script>
