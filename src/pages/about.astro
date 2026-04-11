@@ -67,6 +67,10 @@ import AboutContent from '../content/pages/about.mdx';
         await copyText(u.toString());
         window.history.replaceState(null, '', u.toString());
 
+        if (typeof window.__toast === 'function') {
+          window.__toast('Copied link');
+        }
+
         const prevTitle = h.getAttribute('title') || '';
         h.setAttribute('title', 'Copied link');
         window.setTimeout(() => {

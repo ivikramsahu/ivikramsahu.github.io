@@ -197,6 +197,9 @@ function renderInlineCode(input: string) {
             const ok = await copyText(url);
             if (ok) {
               history.replaceState(null, '', `#${id}`);
+              if (typeof window.__toast === 'function') {
+                window.__toast('Copied link');
+              }
             }
           });
         };

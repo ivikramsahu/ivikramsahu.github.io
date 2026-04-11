@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand-primary-rgb: 0 173 228;
+  --brand-primary: rgb(var(--brand-primary-rgb));
+  --brand-link-rgb: 23 79 169;
+  --brand-link: rgb(var(--brand-link-rgb));
+}
+
 @font-face {
   font-family: 'Agave';
   src: url('/font/Agave-Regular.ttf') format('truetype');
@@ -13,6 +20,14 @@
 @font-face {
   font-family: 'HAL Magic High';
   src: url('/font/HALMagicHigh-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Degular Display';
+  src: url('/font/DegularDisplay-Regular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -66,7 +81,10 @@
   }
 
   .prose :where(h2[id], h3[id], h4[id], h5[id], h6[id]):hover {
-    @apply underline decoration-zinc-300 underline-offset-4 dark:decoration-zinc-700;
+    text-decoration: underline;
+    text-decoration-thickness: from-font;
+    text-underline-offset: 4px;
+    text-decoration-color: rgb(var(--brand-primary-rgb) / 0.55);
   }
 
   .openai-prose {
@@ -74,7 +92,7 @@
   }
 
   .openai-prose {
-    font-size: 17px;
+    font-size: 16.5px;
     line-height: 1.75;
   }
 
@@ -119,24 +137,24 @@
 
   .openai-prose :where(a):not(:where(.not-prose, .not-prose *)) {
     @apply no-underline;
-    color: #174FA9;
-    border-bottom: 1px solid rgba(23, 79, 169, 0.35);
+    color: rgb(var(--brand-link-rgb) / 1);
+    border-bottom: 1px solid rgb(var(--brand-link-rgb) / 0.35);
     transition: border-color 150ms ease, color 150ms ease;
   }
 
   .openai-prose :where(a:hover):not(:where(.not-prose, .not-prose *)) {
-    color: #174FA9;
-    border-bottom-color: #174FA9;
+    color: rgb(var(--brand-link-rgb) / 1);
+    border-bottom-color: rgb(var(--brand-link-rgb) / 1);
   }
 
   .openai-prose :where(.dark a):not(:where(.not-prose, .not-prose *)) {
-    color: #174FA9;
-    border-bottom-color: rgba(23, 79, 169, 0.45);
+    color: rgb(var(--brand-link-rgb) / 1);
+    border-bottom-color: rgb(var(--brand-link-rgb) / 0.45);
   }
 
   .openai-prose :where(.dark a:hover):not(:where(.not-prose, .not-prose *)) {
-    color: #174FA9;
-    border-bottom-color: #174FA9;
+    color: rgb(var(--brand-link-rgb) / 1);
+    border-bottom-color: rgb(var(--brand-link-rgb) / 1);
   }
 
   .openai-prose :where(pre):not(:where(.not-prose, .not-prose *)) {
@@ -214,14 +232,23 @@
     @apply scroll-smooth;
   }
 
+  ::selection {
+    background: rgb(var(--brand-primary-rgb) / 0.25);
+  }
+
+  :where(a, button, input, textarea, select, summary):focus-visible {
+    outline: 2px solid rgb(var(--brand-primary-rgb) / 0.75);
+    outline-offset: 3px;
+  }
+
   :where(h1, h2, h3, h4, h5, h6) {
-    font-family: "HAL Magic High", ui-sans-serif, system-ui, sans-serif;
-    letter-spacing: 0.3px;
+    font-family: "Degular Display", "Mona Sans", ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 1px;
   }
 
   .font-hal {
-    font-family: "HAL Magic High", ui-sans-serif, system-ui, sans-serif;
-    letter-spacing: 0.3px;
+    font-family: "Degular Display", "Mona Sans", ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 1px;
   }
 
   :where(h1, h2, h3, h4, h5, h6, strong, b) {
@@ -240,16 +267,17 @@
     @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-50;
     font-size: 16.5px;
     line-height: revert;
+    font-weight: 450;
     font-family: "Mona Sans", ui-sans-serif, system-ui, sans-serif;
   }
 
   a {
-    color: #174FA9;
+    color: rgb(var(--brand-link-rgb) / 1);
     @apply underline decoration-zinc-300 underline-offset-4 dark:decoration-zinc-700;
   }
 
   a:hover {
-    color: #174FA9;
+    color: rgb(var(--brand-link-rgb) / 1);
     @apply decoration-zinc-900 dark:decoration-zinc-200;
   }
 }
@@ -264,14 +292,14 @@
   }
 
   :where(h1, h2, h3, h4, h5, h6) {
-    letter-spacing: 0.3px !important;
+    letter-spacing: 1px !important;
   }
 
   .font-hal {
-    letter-spacing: 0.3px !important;
+    letter-spacing: 1px !important;
   }
 
   .tracking-tight.font-hal {
-    letter-spacing: 0.3px !important;
+    letter-spacing: 1px !important;
   }
 }

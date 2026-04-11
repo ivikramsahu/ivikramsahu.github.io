@@ -137,19 +137,19 @@ const metaDescription = description ?? 'Writing and notes.';
         <nav class="flex shrink-0 items-center gap-4 text-[16px]">
           <a
             href="/tools/"
-            class="no-underline text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+            class="no-underline text-zinc-700 hover:text-[rgb(var(--brand-link-rgb))] dark:text-zinc-300 dark:hover:text-[rgb(var(--brand-link-rgb))]"
           >
             Tools
           </a>
           <a
             href="/"
-            class="no-underline text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+            class="no-underline text-zinc-700 hover:text-[rgb(var(--brand-link-rgb))] dark:text-zinc-300 dark:hover:text-[rgb(var(--brand-link-rgb))]"
           >
             Blog
           </a>
           <a
             href="/about/"
-            class="no-underline text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+            class="no-underline text-zinc-700 hover:text-[rgb(var(--brand-link-rgb))] dark:text-zinc-300 dark:hover:text-[rgb(var(--brand-link-rgb))]"
           >
             About
           </a>
@@ -338,6 +338,50 @@ const metaDescription = description ?? 'Writing and notes.';
       })();
     </script>
 
+    <div
+      id="toast"
+      class="pointer-events-none fixed bottom-5 left-1/2 z-[60] transition-all duration-200"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <div
+        id="toast-inner"
+        class="rounded-xl border border-zinc-200 bg-white/90 px-4 py-2 text-sm font-medium text-zinc-900 shadow-lg backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-50"
+      ></div>
+    </div>
+
+    <style is:inline>
+      #toast {
+        opacity: 0;
+        transform: translate(-50%, 12px);
+      }
+      #toast[data-open='true'] {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+    </style>
+
+    <script is:inline>
+      (() => {
+        let hideTimer;
+
+        window.__toast = (message) => {
+          const host = document.getElementById('toast');
+          const inner = document.getElementById('toast-inner');
+          if (!host || !inner) return;
+
+          inner.textContent = String(message || 'Copied');
+
+          host.dataset.open = 'true';
+
+          if (hideTimer) window.clearTimeout(hideTimer);
+          hideTimer = window.setTimeout(() => {
+            delete host.dataset.open;
+          }, 1200);
+        };
+      })();
+    </script>
+
     <main class={`mx-auto w-full ${containerClass} flex-1 px-4 py-10`}>
       <slot />
     </main>
@@ -348,7 +392,7 @@ const metaDescription = description ?? 'Writing and notes.';
           Made with ❤ by
           <a
             href="https://www.linkedin.com/in/ivikramsahu/"
-            class="no-underline font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-200 dark:hover:text-white"
+            class="no-underline font-medium text-zinc-700 hover:text-[rgb(var(--brand-link-rgb))] dark:text-zinc-200 dark:hover:text-[rgb(var(--brand-link-rgb))]"
             target="_blank"
             rel="noopener noreferrer"
           >
